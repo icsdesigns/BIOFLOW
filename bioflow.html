@@ -416,7 +416,7 @@ svg.ic{flex-shrink:0;display:inline-block;vertical-align:middle}
 #app{display:flex;flex-direction:column;height:100dvh;overflow:hidden;min-width:0}
 .app{display:flex;flex:1;overflow:hidden;min-height:0;position:relative}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-gutter:stable}
 .wrap{max-width:1180px;margin:0 auto;padding:26px 30px 64px;min-width:0}
 body.wide .wrap{max-width:1560px}
 body.compact .wrap{padding-top:16px;padding-bottom:40px}
@@ -876,13 +876,18 @@ label.cfg-row{cursor:pointer}
 .cfg-pnl-tx{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
 .cfg-pnl-tx b{font-size:15px;font-weight:650;letter-spacing:-.015em}
 .cfg-pnl-tx span{font-size:12px;color:var(--tx2);line-height:1.45}
-.cfg-pnl-chev{display:flex;color:var(--tx3);transition:transform .18s ease;flex-shrink:0}
+.cfg-pnl-chev{display:flex;color:var(--tx3);transition:transform .24s var(--ease);flex-shrink:0}
 .cfg-pnl.open .cfg-pnl-chev{transform:rotate(180deg)}
-.cfg-pnl-bd{display:none;padding:4px 16px 16px;border-top:1px solid var(--bd)}
-.cfg-pnl.open .cfg-pnl-bd{display:block}
-.cfg-pnl.open .cfg-pnl-hd .notif-chip{display:none}
+/* El cuerpo se pliega animando la altura de la fila (0fr a 1fr): nada cambia
+   en horizontal y el contenido no se vuelve a dibujar. */
+.cfg-pnl-bd{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s var(--ease)}
+.cfg-pnl.open .cfg-pnl-bd{grid-template-rows:1fr}
+.cfg-pnl-in{min-height:0;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .18s ease,visibility 0s linear .24s}
+.cfg-pnl.open .cfg-pnl-in{opacity:1;visibility:visible;transition:opacity .22s ease .04s,visibility 0s}
+.cfg-pnl-pad{padding:4px 16px 16px;border-top:1px solid var(--bd)}
+@media(prefers-reduced-motion:reduce){.cfg-pnl-bd,.cfg-pnl-in,.cfg-pnl-chev{transition:none}}
 .cfg-sub{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);margin:22px 2px 4px;padding-top:14px;border-top:1px dashed var(--bd)}
-.cfg-pnl-bd>.cfg-sub:first-child{margin-top:10px;padding-top:0;border-top:none}
+.cfg-pnl-pad>.cfg-sub:first-child{margin-top:10px;padding-top:0;border-top:none}
 @media (max-width:560px){.cfg-pnl-hd .notif-chip{display:none}}
 
 /* ClipHistory (Configuración): descarga del zip e instrucciones de uso */
@@ -4207,14 +4212,14 @@ function cfgToggle(id){
   const el=document.getElementById('cfgp-'+id);if(!el)return;
   const open=!el.classList.contains('open');
   if(!S.cfgOpen||typeof S.cfgOpen!=='object')S.cfgOpen={};
-  S.cfgOpen[id]=open;save();
+  S.cfgOpen[id]=open;saveLocalSoon();
   el.classList.toggle('open',open);
   const b=el.querySelector('.cfg-pnl-hd');if(b)b.setAttribute('aria-expanded',open);
 }
 /* Salta a un panel de Configuración y lo deja abierto. */
 function cfgOpenPanel(id){
   if(!S.cfgOpen||typeof S.cfgOpen!=='object')S.cfgOpen={};
-  S.cfgOpen[id]=true;save();
+  S.cfgOpen[id]=true;saveLocalSoon();
   if(V.area==='config')refreshConfig();else setArea('config');
   setTimeout(()=>{const el=document.getElementById('cfgp-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},60);
 }
@@ -4348,7 +4353,7 @@ function renderConfig(c){
         ${p.badge||''}
         <span class="cfg-pnl-chev">${ic('chevron-down',18)}</span>
       </button>
-      <div class="cfg-pnl-bd" id="cfgb-${p.id}">${p.body}</div>
+      <div class="cfg-pnl-bd" id="cfgb-${p.id}"><div class="cfg-pnl-in"><div class="cfg-pnl-pad">${p.body}</div></div></div>
     </section>`;
   }).join('');
   c.innerHTML=`<div class="wrap">
@@ -8632,10 +8637,8 @@ load();
 (async()=>{
   runAppLoader();
   try{await restoreFileLink();}catch(_){}
-  V.area=S.area||'dashboard';
-  if(V.area==='projects'&&S.lastPid&&proj(S.lastPid)){V.page='proj';V.pid=S.lastPid;}
-  if(V.area==='phenotype'&&S.lastFsid&&phSample(S.lastFsid)){V.fpage='sample';V.fsid=S.lastFsid;}
-  if(V.area==='reports'&&S.lastRid&&S.reports.some(r=>r.id===S.lastRid)){V.rpage='edit';V.rid=S.lastRid;}
+  /* La app siempre arranca en el Dashboard, sea cual sea la última pestaña. */
+  V.area='dashboard';S.area='dashboard';
   renderAll();updateFileBtn();updateFbBtn();
   histSeed();
   /* Mudanza de las copias antiguas a IndexedDB. No borra nada del estado hasta
