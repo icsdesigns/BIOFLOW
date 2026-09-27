@@ -522,6 +522,11 @@ body.compact .wrap{padding-top:16px;padding-bottom:40px}
 @media(max-width:880px){.logo-txt{display:none}}
 @media(max-width:660px){.gsrch{display:none}}
 @media(max-width:600px){#fbBtn,#fileBtn,#thBtn{display:none}.bar-more-wrap{display:block}}
+/* Las dos etiquetas del botón de tema ocupan la misma celda: el botón mide
+   siempre lo que la más larga y no mueve el resto del banner al pulsarlo. */
+#thBtn .th-lbl{display:inline-grid}
+#thBtn .th-lbl i{grid-area:1/1;font-style:normal;text-align:center}
+#thBtn .th-lbl i[hidden]{display:block;visibility:hidden}
 body:not(.win-max) #fileBtn span,body:not(.win-max) #thBtn span{display:none}
 body:not(.win-max) #fileBtn,body:not(.win-max) #thBtn{padding:0 7px}
 
@@ -2487,7 +2492,7 @@ function applyTheme(){
   r.dataset.theme=t.id;
   if(t.dark)r.setAttribute('data-dark','');else r.removeAttribute('data-dark');
   const b=document.getElementById('thBtn');
-  if(b)b.innerHTML=(t.dark?ic('sun',18):ic('moon',18))+`<span>${t.dark?'Claro':'Oscuro'}</span>`;
+  if(b)b.innerHTML=(t.dark?ic('sun',18):ic('moon',18))+`<span class="th-lbl"><i${t.dark?'':' hidden'}>Claro</i><i${t.dark?' hidden':''}>Oscuro</i></span>`;
 }
 function setTheme(id){if(!THEMES.some(t=>t.id===id))return;S.theme=id;save();applyTheme();if(V.area==='config')refreshConfig();}
 /* El botón de la barra y el atajo alternan entre el último tema claro y el
