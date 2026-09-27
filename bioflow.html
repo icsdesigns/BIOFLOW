@@ -551,6 +551,7 @@ body:not(.win-max) #fileBtn,body:not(.win-max) #thBtn{padding:0 7px}
 .side-foot{padding:12px 14px;box-shadow:inset 0 1px 0 var(--sb-bd);display:flex;gap:8px;flex-shrink:0}
 /* Configuración va aparte, anclada al pie del menú lateral. */
 .side-bot{margin-top:auto;padding:10px 0;box-shadow:inset 0 1px 0 var(--sb-bd)}
+.cfg-ver{font-size:12px;font-weight:650;color:var(--tx2);background:var(--sf3);border-radius:999px;padding:3px 11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 .new-btn{
   width:100%;background:linear-gradient(180deg,var(--pri-1),var(--pri-2));
@@ -2161,6 +2162,16 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 .scroll>.wrap.quiet{animation:none}
 .no-up{text-transform:none}
 @keyframes viewIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* Cambio de área: la vista saliente se desvanece hacia arriba o hacia abajo
+   mientras la nueva llega desde el lado contrario, siguiendo el orden del menú
+   lateral. --vt-dir vale 1 al bajar por el menú y -1 al subir. */
+.vt-ghost{position:fixed;overflow:hidden;pointer-events:none;z-index:1;animation:vtOut .18s cubic-bezier(.4,0,1,1) both}
+.vt-ghost>.vt-ghost-in{position:absolute;left:0;right:0}
+.scroll>.vt-in{animation:vtIn .42s cubic-bezier(.16,1,.3,1) .04s both}
+.side-in>.vt-side{animation:vtSide .3s cubic-bezier(.16,1,.3,1) both}
+@keyframes vtOut{to{opacity:0;transform:translate3d(0,calc(var(--vt-dir,1)*-14px),0) scale(.99)}}
+@keyframes vtIn{from{opacity:0;transform:translate3d(0,calc(var(--vt-dir,1)*24px),0) scale(.992)}}
+@keyframes vtSide{from{opacity:0;transform:translate3d(-8px,0,0)}}
 .rp-feno,.fb-list,.mtx-wrap{scroll-behavior:smooth}
 .icon-btn:active,.pill-btn:active,.foot-btn:active,.ic-x:active{transform:scale(.93)}
 .seg-btn:active{transform:scale(.96)}
@@ -2328,6 +2339,9 @@ const ICONS={
 function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 
 /* ════════ STORAGE ════════ */
+/* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
+   vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
+const APP_VERSION='2.1';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -2547,7 +2561,33 @@ tipEl.addEventListener('mouseenter',cancelHide);
 tipEl.addEventListener('mouseleave',()=>tipEl.classList.remove('show'));
 
 /* ════════ RENDER ROOT ════════ */
-function renderAll(){renderSidebar();renderMain();}
+/* Al cambiar de área la vista vieja se desvanece por encima mientras entra la
+   nueva; el resto de redibujos (un filtro, un ajuste) siguen siendo instantáneos.
+   Todo ocurre en el mismo instante: quien llame a renderAll encuentra ya la
+   vista nueva en el DOM. */
+const AREA_ORDER=['dashboard','agenda','projects','phenotype','reports','strategies','config'];
+let _shownArea=null;
+function renderAll(){
+  const prev=_shownArea,next=V.area;_shownArea=next;
+  const sc=scrollEl();
+  if(!prev||prev===next||!sc||matchMedia('(prefers-reduced-motion: reduce)').matches){renderSidebar();renderMain();return;}
+  document.documentElement.style.setProperty('--vt-dir',AREA_ORDER.indexOf(next)<AREA_ORDER.indexOf(prev)?-1:1);
+  document.querySelectorAll('.vt-ghost').forEach(g=>g.remove());
+  /* La vista saliente se saca tal cual (sin clonar, así los lienzos conservan
+     su dibujo) y se deja encima, sin ids para que nadie la confunda con la nueva. */
+  const r=sc.getBoundingClientRect(),g=document.createElement('div'),gi=document.createElement('div');
+  g.className='vt-ghost';g.setAttribute('aria-hidden','true');
+  Object.assign(g.style,{top:r.top+'px',left:r.left+'px',width:sc.clientWidth+'px',height:r.height+'px'});
+  gi.className='vt-ghost-in';gi.style.top=-sc.scrollTop+'px';
+  while(sc.firstChild)gi.appendChild(sc.firstChild);
+  gi.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+  g.appendChild(gi);sc.after(g);
+  const fuera=()=>g.remove();g.addEventListener('animationend',e=>{if(e.target===g)fuera();});setTimeout(fuera,400);
+  renderSidebar();renderMain();
+  const nv=sc.firstElementChild;if(nv)nv.classList.add('vt-in');
+  const side=document.getElementById('sideIn');
+  if(side){let on=false;[...side.children].forEach(ch=>{if(ch.classList.contains('side-div')){on=true;return;}if(on&&!ch.classList.contains('side-bot'))ch.classList.add('vt-side');});}
+}
 /* Redibuja Configuración en el sitio, sin saltar al principio de la página. */
 function refreshConfig(){const c=scrollEl();if(!c||V.area!=='config')return;const t=c.scrollTop;renderConfig(c);c.scrollTop=t;}
 /* Tras cambiar un ajuste: si estamos en Configuración se redibuja allí; si no,
@@ -4365,7 +4405,7 @@ function renderConfig(c){
     </section>`;
   }).join('');
   c.innerHTML=`<div class="wrap">
-    <div class="hero"><div><div class="eyebrow">Configuración</div><h1 class="title">Configuración</h1><p class="sub">Datos, copias de seguridad, apariencia, fenotipos y comportamiento de la app.</p></div></div>
+    <div class="hero"><div><div class="eyebrow">Configuración</div><h1 class="title">Configuración</h1><p class="sub">Datos, copias de seguridad, apariencia, fenotipos y comportamiento de la app.</p></div><span class="cfg-ver" title="Versión de BioFlow">BioFlow v${APP_VERSION}</span></div>
     <div class="cfg-pnls">${panels}</div>
   </div>`;
 }
