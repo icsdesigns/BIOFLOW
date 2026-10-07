@@ -2341,7 +2341,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -3604,7 +3604,9 @@ function phUpdateCell(s,pid,mid){
 function phApplyPreset(id,markerNames){const s=phSample(id);if(!s)return;const byName={};s.markers.forEach(m=>{byName[m.name]=m.id;});const newMarkers=markerNames.map(n=>({id:byName[n]||uid(),name:n}));const keep=new Set(newMarkers.map(m=>m.id));s.populations.forEach(p=>{Object.keys(p.values).forEach(k=>{if(!keep.has(k))delete p.values[k];});});s.markers=newMarkers;save();renderMain();toast('Preset aplicado',{icon:'circle-check'});}
 function phSaveAsPreset(id){const s=phSample(id);if(!s)return;openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('tag',19)}</span>Guardar panel como preset</div><p class="sub" style="margin-top:4px">Se guardará en Ajustes y podrás aplicarlo a cualquier fenotipo.</p><input class="minput" id="presetName" placeholder="Nombre del preset" value="${esc(s.title)} (panel)"><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cancelar</button><button class="btn btn-p sm" onclick="phConfirmSavePreset('${s.id}')">Guardar</button></div></div>`);setTimeout(()=>{const i=document.getElementById('presetName');if(i){i.focus();i.select();}},40);}
 function phConfirmSavePreset(id){const s=phSample(id);const name=(document.getElementById('presetName').value||'').trim();if(!name){toast('Escribe un nombre',{icon:'alert'});return;}S.ph.presets.push({id:uid(),name,markers:s.markers.map(m=>m.name)});save();closeModal();toast('Preset "'+name+'" guardado',{icon:'circle-check'});}
-function phOpenApplyPreset(id){if(!S.ph.presets.length){toast('No hay presets. Créalos en Ajustes.',{icon:'info'});return;}let items=S.ph.presets.map(p=>`<button class="pick-item" onclick="phApplyPreset('${id}',${JSON.stringify(p.markers).replace(/"/g,'&quot;')});closeModal()"><div style="display:flex;flex-direction:column;gap:2px;width:100%"><span style="font-weight:700">${esc(p.name)}</span><span style="font-size:11.5px;color:var(--tx3);font-family:ui-monospace,monospace">${esc(p.markers.join(' · '))}</span></div></button>`).join('');openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('layers',19)}</span>Aplicar preset</div><p class="sub" style="margin-top:4px">Reemplaza los marcadores del panel. Se conservan los valores de los que coincidan por nombre.</p><div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">${items}</div><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button></div></div>`);}
+function phOpenApplyPreset(id){if(!S.ph.presets.length){toast('No hay presets. Créalos en Ajustes.',{icon:'info'});return;}let items=S.ph.presets.map(p=>`<div style="display:flex;gap:6px;align-items:center"><button class="pick-item" style="flex:1;min-width:0" onclick="phApplyPreset('${id}',${JSON.stringify(p.markers).replace(/"/g,'&quot;')});closeModal()"><div style="display:flex;flex-direction:column;gap:2px;width:100%"><span style="font-weight:700">${esc(p.name)}</span><span style="font-size:11.5px;color:var(--tx3);font-family:ui-monospace,monospace">${esc(p.markers.join(' · '))}</span></div></button><button class="ic-x" title="Eliminar preset" aria-label="Eliminar preset ${esc(p.name)}" onclick="phDeletePresetFromPicker('${id}','${p.id}')">${ic('trash',15)}</button></div>`).join('');openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('layers',19)}</span>Aplicar preset</div><p class="sub" style="margin-top:4px">Reemplaza los marcadores del panel. Se conservan los valores de los que coincidan por nombre. Con la papelera eliminas un preset.</p><div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">${items}</div><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button></div></div>`);}
+/* Eliminar un preset desde el selector «Aplicar preset» (también se puede en Configuración). */
+function phDeletePresetFromPicker(sid,pid){const i=S.ph.presets.findIndex(x=>x.id===pid);if(i<0)return;const p=S.ph.presets[i];if(!confirm('¿Eliminar el preset «'+p.name+'»?'))return;S.ph.presets.splice(i,1);save();closeModal();if(S.ph.presets.length)phOpenApplyPreset(sid);toast('Preset eliminado',{icon:'trash',actionLabel:'Deshacer',onAction:()=>{S.ph.presets.splice(Math.min(i,S.ph.presets.length),0,p);save();}});}
 function phAddOption(){S.ph.options.push({id:uid(),label:'nuevo',color:'#64748B'});save();settingsChanged();}
 function phUpdateOption(id,patch){const o=S.ph.options.find(x=>x.id===id);if(o){Object.assign(o,patch);save();settingsChanged();}}
 function phRemoveOption(id){S.ph.options=S.ph.options.filter(x=>x.id!==id);save();settingsChanged();}
@@ -4077,7 +4079,7 @@ function buildXlsx(aoa,sheetName){
     {name:'xl/styles.xml',data:strBytes(styles)}
   ]);
 }
-function phOpenExport(id){const s=phSample(id);if(!s)return;openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('download',19)}</span>Exportar fenotipo</div><div style="display:flex;flex-direction:column;gap:9px;margin-top:16px"><button class="btn btn-p" onclick="phCopySample('${id}')">${ic('copy',16)} Copiar para Excel (portapapeles)</button><button class="btn btn-g" onclick="phExportSample('${id}','xlsx')">${ic('sheet',16)} Excel (.xlsx)</button><button class="btn btn-g" onclick="phExportSample('${id}','txt')">${ic('file',16)} Texto (TXT)</button><button class="btn btn-g" onclick="phPrintMatrix('${id}')">${ic('pdf',16)} PDF</button></div><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button></div></div>`);}
+function phOpenExport(id){const s=phSample(id);if(!s)return;openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('download',19)}</span>Exportar fenotipo</div><div style="display:flex;flex-direction:column;gap:9px;margin-top:16px"><button class="btn btn-p" onclick="phCopySample('${id}')">${ic('copy',16)} Copiar para Excel (portapapeles)</button><button class="btn btn-g" onclick="phCopySampleText('${id}')">${ic('copy',16)} Copiar como texto (portapapeles)</button><button class="btn btn-g" onclick="phExportSample('${id}','xlsx')">${ic('sheet',16)} Excel (.xlsx)</button><button class="btn btn-g" onclick="phExportSample('${id}','txt')">${ic('file',16)} Texto (TXT)</button><button class="btn btn-g" onclick="phPrintMatrix('${id}')">${ic('pdf',16)} PDF</button></div><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button></div></div>`);}
 function phMarkerSort(a,b){return (a.name||'').localeCompare(b.name||'','es',{numeric:true,sensitivity:'base'});}
 /* Orden de exportación. Por defecto («view») se respeta el que esté seleccionado
    en el fenotipo en ese momento: alfanumérico, creación o personalizado. */
@@ -4123,7 +4125,7 @@ function phSampleAOA(s){
   const stat=(label,key)=>[label,'','',''].concat(used.map(m=>phMarkerPct(s,m)[key])).concat(['']);
   return [['Muestra: '+s.title],s.desc?['Descripción: '+s.desc]:[],['Nº total de poblaciones: '+s.populations.length],[],header,...rows,[],tipo,[],stat('n positivo','pos'),stat('n negativo','neg'),stat('n heterogéneo','het'),[],stat('% positivo','pp'),stat('% negativo','np'),stat('% heterogéneo','hp')];
 }
-// TXT: formato lineal por población (Clon Nombre (freq%; abs células/μl): marcadores), orden alfabético/numérico. Se omiten los marcadores sin expresión en cada población.
+// TXT: formato lineal por población (Nombre (freq%; abs células/μl): marcadores), orden alfabético/numérico. Se omiten los marcadores sin expresión en cada población.
 function phSampleTXT(s){
   const markers=phExportMarkers(s);
   const out=['Muestra: '+s.title];
@@ -4133,7 +4135,7 @@ function phSampleTXT(s){
   if(!s.populations.length)out.push('(Sin poblaciones)');
   phExportPops(s).forEach(p=>{
     const items=markers.filter(m=>phHasVal(p.values[m.id])).map(m=>m.name+phTxtLabel(p.values[m.id]));
-    let line='Clon '+p.title+((p.ident||'').trim()?' ['+p.ident.trim()+']':'')+phPopMeta(p)+': '+items.join(', ')+'.';
+    let line=p.title+((p.ident||'').trim()?' ['+p.ident.trim()+']':'')+phPopMeta(p)+': '+items.join(', ')+'.';
     if((p.comment||'').trim())line+='\n    Comentario: '+p.comment.trim();
     out.push(line);
   });
@@ -7913,6 +7915,8 @@ async function copyClipboard(text){
   try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.top='-1000px';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');document.body.removeChild(ta);return ok;}catch(_){return false;}
 }
 async function phCopySample(id){const s=phSample(id);if(!s)return;closeModal();const ok=await copyClipboard(toTSV(phSampleAOA(s)));toast(ok?'Copiado. Pega con Ctrl+V en Excel.':'No se pudo copiar al portapapeles.',{icon:ok?'circle-check':'alert'});}
+// Copia el mismo texto lineal que la exportación TXT, para pegarlo en un documento o un correo.
+async function phCopySampleText(id){const s=phSample(id);if(!s)return;closeModal();const ok=await copyClipboard(phSampleTXT(s));toast(ok?'Copiado como texto. Pega con Ctrl+V.':'No se pudo copiar al portapapeles.',{icon:ok?'circle-check':'alert'});}
 async function phCopyCompare(){const ok=await (async()=>{const aoa=phCompareAOA();closeModal();return copyClipboard(toTSV(aoa));})();toast(ok?'Copiado. Pega con Ctrl+V en Excel.':'No se pudo copiar al portapapeles.',{icon:ok?'circle-check':'alert'});}
 
 // ZIP (almacenado, sin compresión)
