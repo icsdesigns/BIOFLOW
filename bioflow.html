@@ -976,6 +976,10 @@ label.cfg-row{cursor:pointer}
 .clip-hd>.cfg-txt{flex:1 1 280px}
 .clip-meta{font-size:11.5px;color:var(--tx3);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
 .clip-meta i{font-style:normal;background:var(--sf2);border:1px solid var(--bd);border-radius:999px;padding:1px 8px}
+.nav-item.upd-dot{position:relative}
+.nav-item.upd-dot::after{content:'';position:absolute;left:25px;top:8px;width:8px;height:8px;border-radius:50%;background:var(--ac);box-shadow:0 0 0 2px var(--sb-solid)}
+.upd-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.upd-notes{margin:0;padding:0 0 0 18px;font-size:12.5px;color:var(--tx2);line-height:1.6}
 .clip-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);margin:18px 2px 9px}
 .clip-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
 .clip-step{display:flex;gap:11px;padding:12px;border:1px solid var(--bd);border-radius:11px;background:var(--sf2);min-width:0}
@@ -2420,7 +2424,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.5';
+const APP_VERSION='2.6';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -2614,7 +2618,7 @@ function toast(msg,opts={}){
   elx.innerHTML=`<span class="lead">${ic(opts.icon||'info',19)}</span><span class="toast-msg">${esc(msg)}</span>`;
   if(opts.actionLabel){
     const b=document.createElement('button');b.className='toast-act';
-    b.innerHTML=`${ic('undo',15)}${esc(opts.actionLabel)}`;
+    b.innerHTML=`${ic(opts.actionIcon||'undo',15)}${esc(opts.actionLabel)}`;
     b.onclick=()=>{opts.onAction&&opts.onAction();dismiss();};elx.appendChild(b);
   }
   cont.appendChild(elx);
@@ -3192,6 +3196,126 @@ function combinedPayload(){return{app:'bioflow',kind:'combined',version:2,savedA
 function exportData(){
   const stamp=new Date().toISOString().slice(0,10);
   saveExportText(`bioflow-${stamp}.json`,JSON.stringify(combinedPayload(),null,2),'application/json');
+}
+/* ════════ ACTUALIZACIONES ════════ */
+/* La versión publicada es la APP_VERSION del bioflow.html de la rama main en
+   GitHub (repo público: se lee sin claves). Las novedades salen de los
+   mensajes de commit, que empiezan por «vX.Y ·». Las versiones se comparan
+   como dos enteros (mayor, menor), porque v2.10 va después de v2.9. */
+const UPD_REPO='icsdesigns/BIOFLOW';
+const UPD_RAW=`https://raw.githubusercontent.com/${UPD_REPO}/main/bioflow.html`;
+const UPD_API=`https://api.github.com/repos/${UPD_REPO}`;
+const UPD_EVERY=12*3600e3;  // con la app abierta, se vuelve a mirar cada 12 h
+let UPD={state:'idle',remote:null,html:null,notes:[],exe:null,err:''};
+function verParse(v){const m=/^v?(\d+)\.(\d+)/.exec(String(v||'').trim());return m?[+m[1],+m[2]]:null;}
+function verCmp(a,b){const x=verParse(a),y=verParse(b);if(!x||!y)return 0;return x[0]-y[0]||x[1]-y[1];}
+function updAvailable(){return UPD.state==='available'&&UPD.remote&&verCmp(UPD.remote,APP_VERSION)>0;}
+async function updFetch(url,type){
+  const r=await fetch(url,{cache:'no-store',headers:type==='json'?{Accept:'application/vnd.github+json'}:{}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return type==='json'?r.json():r.text();
+}
+/* Novedades: commits del HTML más nuevos que la versión instalada. */
+async function updLoadNotes(){
+  try{
+    const list=await updFetch(`${UPD_API}/commits?path=bioflow.html&per_page=40`,'json');
+    const out=[];
+    for(const c of list){
+      const msg=((c.commit&&c.commit.message)||'').split('\n')[0].trim();
+      const v=verParse(msg);
+      if(v&&verCmp(msg,APP_VERSION)<=0)break;
+      if(msg)out.push(msg);
+    }
+    UPD.notes=out.slice(0,12);
+  }catch(_){UPD.notes=[];}
+  /* Si hay una Release con instalador .exe, la app de escritorio lo ofrece. */
+  try{
+    const rel=await updFetch(`${UPD_API}/releases/latest`,'json');
+    const a=(rel.assets||[]).find(x=>/\.exe$/i.test(x.name||''));
+    UPD.exe=a&&verCmp(rel.tag_name||a.name.replace(/^\D+/,''),APP_VERSION)>0?{name:a.name,url:a.browser_download_url,page:rel.html_url}:null;
+  }catch(_){UPD.exe=null;}
+}
+/* manual=true: desde el botón «Buscar ahora» (avisa también si no hay nada). */
+async function updCheck(manual){
+  if(UPD.state==='checking')return;
+  UPD.state='checking';UPD.err='';refreshConfig();
+  try{
+    const html=await updFetch(UPD_RAW,'text');
+    const m=/const APP_VERSION='([^']+)'/.exec(html);
+    if(!m)throw new Error('sin versión');
+    UPD.remote=m[1];S.updLast=new Date().toISOString();saveLocalSoon();
+    if(verCmp(UPD.remote,APP_VERSION)>0){
+      UPD.html=html;UPD.state='available';
+      await updLoadNotes();
+      if(manual||S.updSkip!==UPD.remote)updNotify();
+    }else{
+      UPD.html=null;UPD.state='latest';
+      if(manual)toast(`Tienes la última versión (v${APP_VERSION}).`,{icon:'circle-check'});
+    }
+  }catch(e){
+    UPD.state='error';
+    UPD.err=navigator.onLine===false?'Sin conexión a internet.':'No se pudo contactar con GitHub.';
+    if(manual)toast(UPD.err,{icon:'alert'});
+  }
+  refreshConfig();updSideDot();
+}
+function updNotify(){
+  toast(`BioFlow v${UPD.remote} disponible (tienes la v${APP_VERSION}).`,{icon:'sparkle',actionIcon:'download',actionLabel:'Ver',duration:12000,onAction:()=>cfgOpenPanel('actualizaciones')});
+}
+/* El botón de Configuración del menú lateral lleva un punto mientras haya versión nueva. */
+function updSideDot(){renderSidebar();}
+function updSkip(){S.updSkip=UPD.remote;saveLocalSoon();toast(`No volverá a avisarte de la v${UPD.remote}.`,{icon:'bell-off'});refreshConfig();}
+function updToggleAuto(on){S.updAuto=on;save();if(on&&UPD.state==='idle')updCheck(false);}
+/* Descarga el nuevo bioflow.html. En el navegador se propone guardarlo con el
+   mismo nombre que el archivo abierto, para poder sustituirlo directamente. */
+async function updDownload(){
+  if(!UPD.html){toast('Vuelve a buscar la actualización.',{icon:'alert'});return;}
+  const bytes=strBytes(UPD.html);
+  if(DESKTOP){await saveExportBytes('bioflow.html',bytes,'text/html');return;}
+  const cur=location.protocol==='file:'?decodeURIComponent(location.pathname.split('/').pop()||''):'';
+  const name=/\.html?$/i.test(cur)?cur:'bioflow.html';
+  if('showSaveFilePicker' in window){
+    try{
+      const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'Página HTML',accept:{'text/html':['.html','.htm']}}]});
+      const w=await h.createWritable();await w.write(new Blob([bytes],{type:'text/html'}));await w.close();
+      toast(`Guardada la v${UPD.remote}. Si sustituiste este archivo, recarga con F5.`,{icon:'circle-check',duration:9000});
+      return;
+    }catch(e){if(e&&e.name==='AbortError')return;}
+  }
+  downloadBytes(name,bytes,'text/html');
+  toast('Descargado. Sustituye tu bioflow.html por el nuevo y vuelve a abrirlo.',{icon:'circle-check',duration:9000});
+}
+function updOpenExe(){if(UPD.exe)window.open(UPD.exe.url,'_blank');}
+function updPanel(){
+  const avail=updAvailable();
+  const last=S.updLast?relTime(S.updLast):'nunca';
+  const status={
+    idle:`Última comprobación: ${esc(last)}.`,
+    checking:'Comprobando en GitHub…',
+    latest:`Tienes la última versión. Comprobado ${esc(last)}.`,
+    available:`Hay una versión nueva: <b>v${esc(UPD.remote)}</b>.`,
+    error:`${esc(UPD.err)} Última comprobación correcta: ${esc(last)}.`
+  }[UPD.state]||'';
+  const notes=avail&&UPD.notes.length?`<div class="clip-lbl">Novedades</div><ul class="upd-notes">${UPD.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:'';
+  const how=DESKTOP
+    ?`<div class="clip-step"><span class="clip-n">1</span><div><b>${UPD.exe?'Instalador':'Descarga'}</b><span>${UPD.exe?`Descarga <b>${esc(UPD.exe.name)}</b> y ejecútalo encima de la instalación actual.`:'Guarda el nuevo <b>bioflow.html</b> en la carpeta desde la que generas el instalador, sustituyendo al anterior.'}</span></div></div>
+       ${UPD.exe?'':`<div class="clip-step"><span class="clip-n">2</span><div><b>Genera el instalador</b><span>Ejecuta <b>Generar-BioFlow-instalador.bat</b> y después el nuevo instalador encima del actual.</span></div></div>`}`
+    :`<div class="clip-step"><span class="clip-n">1</span><div><b>Descarga</b><span>Guárdalo con el mismo nombre y en la misma carpeta que el archivo que tienes abierto, sustituyéndolo.</span></div></div>
+       <div class="clip-step"><span class="clip-n">2</span><div><b>Recarga</b><span>Pulsa F5 o vuelve a abrir el archivo.</span></div></div>`;
+  return `
+        <div class="cfg-row"><div class="cfg-txt"><b>Versión instalada: v${esc(APP_VERSION)}</b><span>${status}</span></div><button class="btn btn-g sm" onclick="updCheck(true)" ${UPD.state==='checking'?'disabled':''}>${ic('rotate',15)} Buscar ahora</button></div>
+        ${avail?`<div class="cfg-row"><div class="cfg-txt"><b>BioFlow v${esc(UPD.remote)}</b><span>${S.updSkip===UPD.remote?'Has decidido omitir esta versión; no saldrá el aviso al abrir.':'Lista para descargar desde GitHub.'}</span></div>
+          <div class="upd-acts">${S.updSkip===UPD.remote?'':`<button class="btn btn-g sm" onclick="updSkip()">${ic('bell-off',15)} Omitir</button>`}${UPD.exe?`<button class="btn btn-p sm" onclick="updOpenExe()">${ic('download',15)} Instalador .exe</button>`:''}<button class="btn ${UPD.exe?'btn-g':'btn-p'} sm" onclick="updDownload()">${ic('download',15)} Descargar bioflow.html</button></div></div>
+          ${notes}
+          <div class="clip-lbl">Cómo se actualiza</div>
+          <div class="clip-steps">${how}
+            <div class="clip-step"><span class="clip-n">${ic('circle-check',13)}</span><div><b>Tus datos se conservan</b><span>Viven en el archivo vinculado y en este equipo, no dentro de la app.</span></div></div>
+          </div>`:''}
+        <label class="cfg-row"><div class="cfg-txt"><b>Buscar actualizaciones al abrir</b><span>Consulta GitHub al arrancar y cada 12 horas. Sin conexión no hace nada.</span></div><input type="checkbox" ${S.updAuto!==false?'checked':''} onchange="updToggleAuto(this.checked)"></label>`;
+}
+function updStart(){
+  if(S.updAuto!==false)setTimeout(()=>updCheck(false),5000);
+  setInterval(()=>{if(S.updAuto!==false)updCheck(false);},UPD_EVERY);
 }
 /* ClipHistory: el ZIP original (código fuente + compilar.bat + LEEME) va
    incrustado en base64 al final de la página y se guarda tal cual. */
@@ -4468,6 +4592,8 @@ function cfgPanels(){
           <div class="clip-tip"><h4>${ic('trash',15)} Desinstalar</h4><p>Clic derecho en el icono → desmarca <i>Iniciar con Windows</i> → <i>Salir</i>, y borra la carpeta.</p></div>
         </div>`},
 
+    {id:'actualizaciones',icon:'rotate',title:'Actualizaciones',desc:'Versión instalada y avisos de versiones nuevas publicadas en GitHub.',badge:updAvailable()?`<span class="notif-chip on">${ic('sparkle',13)} v${esc(UPD.remote)} disponible</span>`:'',body:updPanel()},
+
     {id:'ayuda',icon:'info',title:'Ayuda',desc:'Atajos de teclado.',body:`
         <div class="cfg-row"><div class="cfg-txt"><b>Atajos de teclado</b><span>Lista de atajos disponibles.</span></div><button class="btn btn-g sm" onclick="openShortcuts()">${ic('info',15)} Ver atajos</button></div>`},
   ];
@@ -4496,7 +4622,7 @@ function renderConfig(c){
 /* ════════ BARRA LATERAL (shell con áreas) ════════ */
 function renderSidebar(){
   const el=document.getElementById('sideIn');if(!el)return;
-  const areaBtn=(a,icon,label)=>`<button class="nav-item ${V.area===a?'on':''}" onclick="setArea('${a}')">${ic(icon,20)} ${label}</button>`;
+  const areaBtn=(a,icon,label)=>`<button class="nav-item ${V.area===a?'on':''}${a==='config'&&updAvailable()?' upd-dot':''}" onclick="setArea('${a}')">${ic(icon,20)} ${label}</button>`;
   let ctx='';
   if(V.area==='projects'){
     const list=S.projects.length?S.projects.map(p=>{const on=V.page==='proj'&&V.pid===p.id?' on':'';
@@ -8908,6 +9034,7 @@ load();
   V.area='dashboard';S.area='dashboard';
   renderAll();updateFileBtn();updateFbBtn();
   histSeed();
+  updStart();
   /* Mudanza de las copias antiguas a IndexedDB. No borra nada del estado hasta
      comprobar que están todas guardadas. */
   setTimeout(()=>{
