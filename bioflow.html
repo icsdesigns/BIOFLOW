@@ -480,6 +480,76 @@ body.compact .wrap{padding-top:16px;padding-bottom:40px}
 #fbBtn{padding:0 8px;position:relative}
 .fb-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--chrome-solid)}
 
+/* Centro de avisos: campana de la barra y su panel desplegable */
+.av-wrap{position:relative;flex-shrink:0}
+#avBtn{padding:0 8px;position:relative}
+#avBtn.has{color:var(--act)}
+#avBtn.has .ic{animation:avCampana 1.6s var(--ease) 1}
+@keyframes avCampana{0%,60%,100%{transform:none}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}}
+.av-panel{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:60;width:min(370px,calc(100vw - 24px));
+  max-height:min(500px,calc(100vh - var(--bh) - 24px));
+  background:var(--sf);border:1px solid var(--bd);border-radius:var(--r-m);box-shadow:var(--shadow-pop);
+  display:none;flex-direction:column;transform-origin:top right;animation:menuIn .16s var(--ease-out);
+}
+.av-panel.open{display:flex}
+.av-hd{display:flex;align-items:center;gap:6px;padding:11px 12px 9px;border-bottom:1px solid var(--bd)}
+.av-hd b{font-size:14px;font-weight:650;flex:1;color:var(--tx)}
+.av-hd .av-n{font-size:11px;font-weight:700;background:var(--acl);color:var(--act);padding:1px 7px;border-radius:999px}
+.av-link{background:none;border:none;color:var(--ac);font-size:12px;font-weight:600;padding:3px 6px;border-radius:var(--r-xs);white-space:nowrap}
+.av-link:hover{background:var(--acl)}
+.av-link[disabled]{opacity:.4;pointer-events:none}
+.av-list{overflow:auto;padding:5px;display:flex;flex-direction:column;gap:1px;min-height:0}
+.av-it{display:flex;gap:10px;align-items:flex-start;width:100%;padding:8px 9px;border:none;background:transparent;border-radius:var(--r-s);text-align:left;color:var(--tx);position:relative}
+.av-it:hover{background:var(--sf2)}
+.av-it .nt-ico{flex-shrink:0}
+.av-it-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.av-it-meta{display:flex;gap:6px;align-items:baseline;font-size:11.5px;color:var(--tx3)}
+.av-it-meta b{font-weight:650;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av-it-meta i{font-style:normal;margin-left:auto;white-space:nowrap}
+.av-it-txt{font-size:13px;line-height:1.35;color:var(--tx);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.av-it.leido .av-it-txt{color:var(--tx2)}
+.av-it .av-dot{width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:6px;box-shadow:0 0 0 3px var(--acl)}
+.av-it.leido .av-dot{visibility:hidden}
+.av-empty{padding:26px 16px;text-align:center;color:var(--tx3);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.av-empty .ic{color:var(--tx3);opacity:.7}
+.av-ft{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--bd);font-size:11.5px;color:var(--tx3)}
+.av-ft span{flex:1;min-width:0}
+
+/* Ventana emergente de un aviso, con un halo luminoso discreto alrededor */
+@property --av-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+.av-pop{
+  position:fixed;top:calc(var(--bh) + 12px);right:16px;z-index:9400;width:min(380px,calc(100vw - 32px));
+  background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:var(--r-l);
+  box-shadow:var(--shadow-pop);isolation:isolate;
+  animation:avIn .4s var(--ease-out),avHalo 3.2s ease-in-out .4s infinite;
+}
+.av-pop::before{
+  content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:-1;
+  background:conic-gradient(from var(--av-a),transparent 0 58%,var(--teal-300) 76%,var(--teal-500) 84%,transparent 96%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  animation:avGiro 5s linear infinite;opacity:.85;
+}
+.av-pop.out{animation:avOut .22s var(--ease) forwards}
+@keyframes avGiro{to{--av-a:360deg}}
+@keyframes avHalo{0%,100%{box-shadow:var(--shadow-pop),0 0 0 0 rgba(37,192,166,0)}50%{box-shadow:var(--shadow-pop),0 0 26px 3px rgba(37,192,166,.26)}}
+@keyframes avIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes avOut{to{opacity:0;transform:translateY(-8px) scale(.98)}}
+.av-pop-hd{display:flex;align-items:flex-start;gap:11px;padding:14px 12px 6px 14px}
+.av-pop-ic{width:34px;height:34px;border-radius:10px;background:var(--acl);color:var(--act);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.av-pop-tit{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding-top:1px}
+.av-pop-tit b{font-size:14.5px;font-weight:650}
+.av-pop-tit span{font-size:12px;color:var(--tx3)}
+.av-pop .av-list{max-height:min(300px,50vh);padding:2px 6px}
+.av-pop-act{display:flex;justify-content:flex-end;gap:8px;padding:8px 12px 12px}
+@media(max-width:560px){.av-pop{left:12px;right:12px;width:auto}}
+@media(prefers-reduced-motion:reduce){
+  .av-pop{animation:none;box-shadow:var(--shadow-pop),0 0 0 2px rgba(37,192,166,.35)}
+  .av-pop::before{display:none}
+  #avBtn.has .ic{animation:none}
+}
+
 /* Control de zoom segmentado */
 .zoom-ctl{display:flex;align-items:center;gap:1px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r-xs);padding:1px;flex-shrink:0;height:28px}
 .zoom-ctl button{background:none;border:none;width:24px;height:24px;border-radius:5px;color:var(--tx2);display:flex;align-items:center;justify-content:center;transition:background .14s var(--ease),color .14s var(--ease)}
@@ -2239,6 +2309,10 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
       <button onclick="zoomStep(1)" title="Aumentar (Ctrl +)" aria-label="Aumentar zoom"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     </div>
     <div class="save-ind local" id="saveInd" title="Estado de guardado"><span class="dot"></span><span class="txt">Local</span></div>
+    <div class="av-wrap" id="avWrap">
+      <button class="pill-btn" id="avBtn" onclick="avToggle(event)" title="Avisos" aria-label="Avisos" aria-haspopup="dialog" aria-expanded="false"></button>
+      <div class="av-panel" id="avPanel" role="dialog" aria-label="Avisos"></div>
+    </div>
     <button class="pill-btn" id="fbBtn" onclick="openNotes()" title="Notas"></button>
     <button class="pill-btn" id="fileBtn" onclick="fileBtnClick()" title="Vincular un archivo de la carpeta para guardar/cargar automáticamente"></button>
     <button class="pill-btn" id="thBtn" onclick="toggleTheme()"></button>
@@ -2346,7 +2420,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6816,11 +6890,11 @@ function avisosVencidos(){
   const out=[];
   notesDue().forEach(n=>out.push({
     icono:'message',etiqueta:noteCat(n.cat).name,cuando:noteDueLabel(n),texto:n.text,clase:noteCat(n.cat).cls,
-    marcar:()=>{n.remindDone=true;},abrir:()=>openNotes()
+    marcar:()=>{n.remindDone=true;},ir:{tipo:'nota'}
   }));
   (typeof agDueAlerts==='function'?agDueAlerts():[]).forEach(a=>out.push({
     icono:'calendar',etiqueta:a.inst._cal.name,cuando:(a.inst.time?a.inst.time+' · ':'')+agShortDate(a.occ)+' · '+agAlertLabel(a.min),texto:a.inst.title,clase:'note',
-    marcar:()=>agMarkAlert(a),abrir:()=>{setArea('agenda');agOpenDay(a.occ);}
+    marcar:()=>agMarkAlert(a),ir:{tipo:'agenda',fecha:a.occ}
   }));
   return out;
 }
@@ -6831,18 +6905,158 @@ function notesCheckReminders(atStart){
   try{due=avisosVencidos();}catch(e){try{console.warn('BioFlow · fallo al reunir los avisos:',e);}catch(_){}return false;}
   if(!due.length)return false;
   due.forEach(x=>{try{x.marcar();}catch(_){}});
+  const nuevos=avRegistrar(due);
   save();updateFbBtn();
-  if(atStart||due.length>4){
-    notesShowDueModal(due);
-    notifyOS('BioFlow · '+due.length+' recordatorio(s)',due.map(x=>x.texto).join(' · ').slice(0,180),()=>{try{window.focus();}catch(_){}});
+  avPopMostrar(nuevos,atStart);
+  if(atStart||nuevos.length>4){
+    notifyOS('BioFlow · '+nuevos.length+(nuevos.length===1?' recordatorio':' recordatorios'),nuevos.map(x=>x.texto).join(' · ').slice(0,180),()=>avAbrirPanel());
   }else{
-    due.forEach(x=>{
+    nuevos.forEach(x=>{
       const txt=x.texto.length>90?x.texto.slice(0,90)+'…':x.texto;
-      toast('Recordatorio · '+x.etiqueta+': '+txt,{icon:'bell',duration:12000,actionLabel:'Ver',onAction:x.abrir});
-      notifyOS('Recordatorio · '+x.etiqueta,txt,x.abrir);
+      notifyOS('Recordatorio · '+x.etiqueta,txt,()=>avAbrir(x.id));
     });
   }
   return true;
+}
+
+/* ── Centro de avisos ──────────────────────────────────────────────────────
+   Cada recordatorio que vence queda registrado en S.avisos (sólo en este
+   equipo) y se ve en la campana de la barra superior, con un contador de los
+   que aún no se han leído. Si BioFlow está abierto cuando vence, además sale
+   una ventana emergente con un halo luminoso discreto; en la app de escritorio
+   también llega el aviso de Windows (ver notifyOS). */
+const AV_MAX=80;
+function avList(){return Array.isArray(S.avisos)?S.avisos:(S.avisos=[]);}
+function avNoLeidos(){return avList().filter(a=>!a.leido).length;}
+function avRegistrar(due){
+  const ts=new Date().toISOString();
+  const nuevos=due.map(x=>({id:uid(),ts,icono:x.icono||'bell',etiqueta:String(x.etiqueta||''),cuando:String(x.cuando||''),texto:String(x.texto||''),clase:x.clase||'note',ir:x.ir||null,leido:false}));
+  S.avisos=nuevos.concat(avList()).slice(0,AV_MAX);
+  return nuevos;
+}
+/* Sólo toca el almacenamiento local: leer un aviso no es un cambio de datos
+   que deba entrar en el historial de deshacer ni en el archivo vinculado. */
+function avGuardar(){saveLocalSoon();avPaint();}
+function avHace(iso){
+  const ms=Date.now()-new Date(iso).getTime();
+  if(!(ms>=0))return '';
+  const m=Math.round(ms/60000);
+  if(m<1)return 'ahora';
+  if(m<60)return 'hace '+m+' min';
+  const h=Math.round(m/60);
+  if(h<24)return 'hace '+h+' h';
+  return new Date(iso).toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+}
+function avItemHTML(a,enPop){
+  return `<button class="av-it${a.leido&&!enPop?' leido':''}" onclick="avAbrir('${a.id}')" title="Abrir">
+    <div class="nt-ico ${esc(a.clase||'note')}">${ic(a.icono||'bell',16)}</div>
+    <div class="av-it-body">
+      <div class="av-it-meta"><b>${esc(a.etiqueta)}</b>${a.cuando?`<span>${esc(a.cuando)}</span>`:''}${enPop?'':`<i>${esc(avHace(a.ts))}</i>`}</div>
+      <div class="av-it-txt">${esc(a.texto)}</div>
+    </div>
+    ${enPop?'':'<span class="av-dot" aria-hidden="true"></span>'}
+  </button>`;
+}
+
+/* Botón de la barra y panel */
+let _avUltN=null;
+function avPaint(){
+  const n=avNoLeidos();
+  const b=document.getElementById('avBtn');
+  if(b){
+    b.innerHTML=ic('bell',18)+(n?`<span class="fb-badge">${n>99?'99+':n}</span>`:'');
+    b.classList.toggle('has',n>0);
+    /* La campana sólo se mueve cuando sube el contador, no en cada repintado. */
+    if(!(_avUltN!==null&&n>_avUltN)){const i=b.querySelector('.ic');if(i)i.style.animation='none';}
+    _avUltN=n;
+    b.title='Avisos'+(n?` · ${n} sin leer`:'');
+    b.setAttribute('aria-label','Avisos'+(n?` (${n} sin leer)`:''));
+  }
+  const p=document.getElementById('avPanel');
+  if(p&&p.classList.contains('open'))avPaintPanel();
+}
+function avPaintPanel(){
+  const p=document.getElementById('avPanel');if(!p)return;
+  const lista=avList(),n=avNoLeidos();
+  const est=notifEstado();
+  p.innerHTML=`<div class="av-hd"><b>Avisos</b>${n?`<span class="av-n">${n} sin leer</span>`:''}
+      <button class="av-link" onclick="avMarcarTodo()" ${n?'':'disabled'}>Marcar como leídos</button></div>
+    ${lista.length?`<div class="av-list">${lista.map(a=>avItemHTML(a,false)).join('')}</div>`
+      :`<div class="av-empty">${ic('bell',26)}<span>No hay avisos. Aquí aparecerán los recordatorios de Notas y de la Agenda cuando venzan.</span></div>`}
+    <div class="av-ft"><span title="${esc(est.motivo||'')}">Avisos de ${DESKTOP||/\bElectron\//.test(navigator.userAgent||'')?'Windows':'escritorio'}: ${esc(notifEtiqueta())}</span>
+      ${lista.length?'<button class="av-link" onclick="avVaciar()">Vaciar</button>':''}
+      <button class="av-link" onclick="avCerrarPanel();notesAskOSPermission()">${est.activo?'Probar':'Activar'}</button></div>`;
+}
+function avAbrirPanel(){
+  try{window.focus();}catch(_){}
+  const p=document.getElementById('avPanel'),b=document.getElementById('avBtn');
+  if(!p)return;
+  /* El panel ya enseña lo mismo que la ventana emergente: no se solapan. */
+  avPopCerrar(false);
+  avPaintPanel();p.classList.add('open');
+  if(b)b.setAttribute('aria-expanded','true');
+}
+function avCerrarPanel(){
+  const p=document.getElementById('avPanel'),b=document.getElementById('avBtn');
+  if(p)p.classList.remove('open');
+  if(b)b.setAttribute('aria-expanded','false');
+}
+function avToggle(e){
+  if(e)e.stopPropagation();
+  const p=document.getElementById('avPanel');
+  if(p&&p.classList.contains('open'))avCerrarPanel();else{closeBarMenu();avAbrirPanel();}
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#avWrap,.av-pop'))avCerrarPanel();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){avCerrarPanel();}});
+
+/* Abrir un aviso: se marca como leído y se va a su sitio. */
+function avAbrir(id){
+  try{window.focus();}catch(_){}
+  const a=avList().find(x=>x.id===id);
+  avCerrarPanel();avPopCerrar(false);
+  if(!a)return;
+  a.leido=true;avGuardar();
+  const ir=a.ir||{};
+  if(ir.tipo==='agenda'){setArea('agenda');if(ir.fecha)try{agOpenDay(ir.fecha);}catch(_){}}
+  else openNotes();
+}
+function avMarcarTodo(){avList().forEach(a=>{a.leido=true;});avGuardar();}
+function avVaciar(){
+  const antes=avList().slice();
+  S.avisos=[];avGuardar();
+  toast('Avisos vaciados',{icon:'trash',actionLabel:'Deshacer',onAction:()=>{S.avisos=antes;avGuardar();}});
+}
+
+/* Ventana emergente. Si ya hay una abierta, los avisos nuevos se suman a ella
+   en lugar de apilar ventanas. Se queda hasta que se cierra: si llega con la
+   ventana en segundo plano, sigue ahí al volver. */
+let _avPopIds=[];
+function avPopMostrar(nuevos,alArrancar){
+  if(!nuevos||!nuevos.length)return;
+  _avPopIds=nuevos.map(a=>a.id).concat(_avPopIds.filter(id=>!nuevos.some(a=>a.id===id)));
+  const items=_avPopIds.map(id=>avList().find(a=>a.id===id)).filter(Boolean);
+  if(!items.length)return;
+  let el=document.getElementById('avPop');
+  const nuevo=!el;
+  if(nuevo){el=document.createElement('div');el.id='avPop';el.className='av-pop';el.setAttribute('role','alertdialog');el.setAttribute('aria-labelledby','avPopTit');}
+  const n=items.length;
+  el.innerHTML=`<div class="av-pop-hd">
+      <span class="av-pop-ic">${ic('bell',19)}</span>
+      <div class="av-pop-tit"><b id="avPopTit">${n===1?'Recordatorio':n+' recordatorios'}</b><span>${alArrancar&&nuevo?(n===1?'Venció mientras BioFlow estaba cerrado':'Vencieron mientras BioFlow estaba cerrado'):(n===1?'Acaba de vencer':'Acaban de vencer')}</span></div>
+      <button class="ic-x" onclick="avPopCerrar(true)" title="Cerrar" aria-label="Cerrar">${ic('x',16)}</button>
+    </div>
+    <div class="av-list">${items.map(a=>avItemHTML(a,true)).join('')}</div>
+    <div class="av-pop-act"><button class="btn btn-g sm" onclick="avPopCerrar(false);avAbrirPanel()">Ver todos</button><button class="btn btn-p sm" onclick="avPopCerrar(true)">${ic('check',15)} Entendido</button></div>`;
+  if(nuevo)document.body.appendChild(el);
+}
+/* «Entendido» o la X dan por leídos los avisos de la ventana. */
+function avPopCerrar(leidos){
+  const el=document.getElementById('avPop');
+  if(leidos){avList().forEach(a=>{if(_avPopIds.includes(a.id))a.leido=true;});avGuardar();}
+  _avPopIds=[];
+  if(!el)return;
+  el.id='';el.classList.add('out');
+  setTimeout(()=>el.remove(),220);
 }
 
 /* ── Avisos del sistema operativo ──────────────────────────────────────────
@@ -6859,7 +7073,11 @@ function notesCheckReminders(atStart){
    botón de Notas, la Configuración y el disparo real del aviso. */
 function notifEstado(){
   const api=typeof window.Notification==='function';
-  const local=(location.protocol==='file:');
+  /* La app de escritorio (Electron) también carga el archivo por file://, pero
+     allí los avisos sí funcionan: salen como notificaciones de Windows y el
+     permiso viene concedido. Sólo el navegador se queda sin ellos. */
+  const escritorio=DESKTOP||/\bElectron\//.test(navigator.userAgent||'');
+  const local=(location.protocol==='file:')&&!escritorio;
   let permiso=api?Notification.permission:'unsupported';
   /* En file:// el permiso se queda en «default» para siempre: no es que falte
      pulsar el botón, es que ese origen no puede recibirlo. */
@@ -6960,16 +7178,6 @@ function notifProbar(){
   toast(fue?'Aviso de prueba enviado al escritorio':'Aviso de prueba (dentro de la app): '+notifEstado().motivo,
     {icon:fue?'circle-check':'bell',duration:8000});
 }
-function notesShowDueModal(due){
-  const items=due.map(x=>`<div class="fb-item"><div class="nt-ico ${x.clase||'note'}">${ic(x.icono,16)}</div><div class="fb-body"><div class="fb-meta"><span class="fb-tag ${x.clase||'note'}">${esc(x.etiqueta)}</span><span class="fb-date">${esc(x.cuando||'')}</span></div><div class="fb-text">${esc(x.texto)}</div></div></div>`).join('');
-  openModalHTML(`<div class="modal" style="width:min(560px,96vw)">
-    <div class="mtit"><span class="mtit-ic">${ic('bell',19)}</span>Recordatorios pendientes</div>
-    <p class="sub" style="margin-top:2px">${due.length===1?'Un aviso venció':'Estos avisos vencieron'} mientras la app estaba cerrada.</p>
-    <div class="fb-list" style="margin-top:12px">${items}</div>
-    <div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button><button class="btn btn-p sm" onclick="closeModal();setArea('agenda')">${ic('calendar',15)} Ir a la Agenda</button><button class="btn btn-p sm" onclick="openNotes()">${ic('message',15)} Abrir Notas</button></div>
-  </div>`);
-}
-
 /* ── Contador del botón de la barra ── */
 function fbOpenCount(){return noteList().filter(n=>!n.done).length;}
 function updateFbBtn(){
@@ -6981,6 +7189,7 @@ function updateFbBtn(){
     b.setAttribute('aria-label','Notas'+(n?` (${n} sin resolver)`:''));
   }
   const mn=document.getElementById('fbMenuN');if(mn)mn.textContent=n?String(n):'';
+  try{avPaint();}catch(_){}
 }
 
 /* ── Ventana de Notas ──
