@@ -2424,7 +2424,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.6';
+const APP_VERSION='2.7';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -4350,7 +4350,7 @@ function phSampleTXT(s){
   }
   return out.join('\n');
 }
-function phExportSample(id,kind){const s=phSample(id);if(!s)return;closeModal();if(kind==='xlsx')saveExportBytes(safeName(s.title)+'.xlsx',buildXlsx(phSampleAOA(s),s.title),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');else saveExportText(safeName(s.title)+'.txt',phSampleTXT(s),'text/plain;charset=utf-8');}
+function phExportSample(id,kind){const s=phSample(id);if(!s)return;closeModal();if(kind==='xlsx')saveExportBytes(exportBase(s.title,'Fenotipo')+'.xlsx',buildXlsx(phSampleAOA(s),s.title),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');else saveExportText(exportBase(s.title,'Fenotipo')+'.txt',phSampleTXT(s),'text/plain;charset=utf-8');}
 function phCompareAOA(){const rows=V.cmp.map(({sid,pid})=>{const sm=phSample(sid);if(!sm)return null;const p=sm.populations.find(x=>x.id===pid);if(!p)return null;const byName={};sm.markers.forEach(m=>{byName[m.name]=p.values[m.id];});return {st:sm.title,pt:p.title,byName};}).filter(Boolean);const names=[];rows.forEach(r=>Object.keys(r.byName).forEach(n=>{if(!names.includes(n))names.push(n);}));const cls={};names.forEach(n=>{cls[n]=phClassifyValues(rows.map(r=>r.byName[n]));});const header=['Muestra','Población',...names];const body=rows.map(r=>[r.st,r.pt,...names.map(n=>phXlLabel(r.byName[n]))]);const tipo=['','Tipo',...names.map(n=>phClsLabel(cls[n]))];return [header,...body,[],tipo];}
 function phOpenExportCompare(){openModalHTML(`<div class="modal"><div class="mtit"><span class="mtit-ic">${ic('download',19)}</span>Exportar comparativa</div><div style="display:flex;flex-direction:column;gap:9px;margin-top:16px"><button class="btn btn-p" onclick="phCopyCompare()">${ic('copy',16)} Copiar para Excel (portapapeles)</button><button class="btn btn-g" onclick="phExportCompare('xlsx')">${ic('sheet',16)} Excel (.xlsx)</button><button class="btn btn-g" onclick="phExportCompare('txt')">${ic('file',16)} Texto (TXT)</button></div><div class="mact"><button class="btn btn-g sm" onclick="closeModal()">Cerrar</button></div></div>`);}
 function phExportCompare(kind){const aoa=phCompareAOA();closeModal();if(kind==='xlsx')saveExportBytes('comparativa_fenotipos.xlsx',buildXlsx(aoa,'Comparativa'),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');else saveExportText('comparativa_fenotipos.txt',toTSV(aoa),'text/plain;charset=utf-8');}
@@ -7905,43 +7905,112 @@ function fenoCardInner(r){
 /* celularidad */
 /* Modo de pegado: 'auto' (deducir del contenido), 'refs' (4 columnas de datos)
    o 'norefs' (2 columnas de datos, sin intervalos de referencia). */
+/* ¿Lleva la tabla columnas de referencia? Sólo si alguna fila trae contenido en ellas. */
+function celHasRefs(r){return (r.celRows||[]).some(x=>String(x.refFreq||'').trim()||String(x.refCel||'').trim());}
+/* En el editor se muestran también con el modo «Con referencias», para poder rellenarlas a mano. */
+function celShowRefs(r){return celHasRefs(r)||celPasteMode()==='refs';}
 function celPasteMode(){const m=S.celPasteMode;return (m==='refs'||m==='norefs')?m:'auto';}
 function rSetCelPasteMode(v){S.celPasteMode=(v==='refs'||v==='norefs')?v:'auto';save();refreshReportEditor();}
-/* ¿La tabla pegada trae columnas de referencia?
-   1) Una cabecera que diga «referencia» lo zanja.
-   2) Si no, manda el número de columnas: 4 o más ⇒ con referencias;
-      3 o menos ⇒ Población + Frecuencia + Células/µL.
-   Se usa el número de columnas más repetido, no el máximo, para que un
-   tabulador suelto en una fila no desvíe la deducción. */
-function celDetectRefs(lines){
-  if(lines.some(l=>/referencia/i.test(l)))return true;
-  const tally={};let best=0,bestN=0;
-  lines.forEach(l=>{const n=l.split('\t').length;tally[n]=(tally[n]||0)+1;if(tally[n]>bestN||(tally[n]===bestN&&n>best)){best=n;bestN=tally[n];}});
-  return best>=4;
+/* Texto pegado → filas de celdas. Entiende el formato de Excel (tabuladores, con
+   celdas entre comillas que pueden llevar saltos de línea) y, si no hay ningún
+   tabulador (p.ej. texto copiado de un PDF), separa por «;» o por 2+ espacios. */
+function celSplitCells(txt){
+  txt=txt.replace(/ /g,' ').replace(/\r\n?/g,'\n');
+  if(txt.indexOf('\t')<0)return txt.split('\n').map(l=>l.split(/\s*;\s*|\s{2,}/));
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<txt.length;i++){
+    const ch=txt[i];
+    if(q){if(ch==='"'){if(txt[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;continue;}
+    if(ch==='"'&&cell==='')q=true;
+    else if(ch==='\t'){row.push(cell);cell='';}
+    else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
+    else cell+=ch;
+  }
+  row.push(cell);rows.push(row);
+  return rows.map(r=>r.map(c=>c.replace(/\s*\n\s*/g,' ')));
+}
+/* Tabla HTML del portapapeles (Word, web…) → texto con tabuladores. Las celdas
+   combinadas (colspan) se rellenan con celdas vacías para no desplazar columnas. */
+function celHtmlToTsv(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');const t=doc.querySelector('table');if(!t)return '';
+  return Array.from(t.rows).map(tr=>{const out=[];Array.from(tr.cells).forEach(td=>{out.push((td.textContent||'').replace(/[\t\r\n]+/g,' ').replace(/ /g,' ').replace(/\s+/g,' ').trim());for(let k=1;k<(td.colSpan||1);k++)out.push('');});return out.join('\t');}).filter(l=>l.replace(/\t/g,'').trim()).join('\n');
+}
+function celOnPaste(ev){
+  const cd=ev.clipboardData;if(!cd)return;
+  const html=cd.getData('text/html')||'',plain=cd.getData('text/plain')||'';
+  /* Excel ya da tabuladores fiables; la tabla HTML se usa cuando el texto plano no los trae. */
+  if(!/<table/i.test(html)||plain.indexOf('\t')>=0)return;
+  const tsv=celHtmlToTsv(html);if(!tsv)return;
+  ev.preventDefault();ev.target.value=tsv;
+}
+const celIsNum=c=>/^[<>≤≥±~(\[]?\s*[\d.,]+\s*%?\s*([-–—]\s*[\d.,]+\s*%?)?\s*[)\]]?$/.test(c);
+const celIsHeader=cells=>cells.some(c=>/poblaci|frecuen|c[eé]lulas\s*\/|referen/i.test(c))&&!cells.some(celIsNum);
+/* Columnas de datos según la cabecera, sea cual sea su orden. */
+function celHeaderMap(h){
+  const m={};
+  h.forEach((c,i)=>{
+    const s=c.toLowerCase().trim();if(!s)return;
+    if(/referen|rango|interval|normal/.test(s)){
+      if(/c[eé]l|µl|ul\b|\/mm|abs/.test(s)){if(m.refCel==null)m.refCel=i;}
+      else if(m.refFreq==null)m.refFreq=i;else if(m.refCel==null)m.refCel=i;
+    }else if(/c[eé]lulas|µl|ul\b|\/mm|absolut|recuento/.test(s)){if(m.cel==null)m.cel=i;}
+    else if(/frecuen|%|porcent/.test(s)){if(m.freq==null)m.freq=i;}
+  });
+  return (m.freq!=null||m.cel!=null)?m:null;
+}
+/* Interpreta la tabla pegada.
+   · Con cabecera reconocible, cada columna se toma por su nombre.
+   · Sin cabecera manda la posición: la primera columna con números marca dónde
+     empiezan los datos (la más repetida, para que una celda vacía no la mueva).
+   · El nombre es la primera celda con texto antes de los datos; si la población
+     está en la 2.ª o 3.ª columna (subpoblaciones), eso fija su nivel en lugar de
+     perder la fila.
+   · Con referencias si la cabecera lo dice o hay 3+ columnas de datos. */
+function celParseRows(txt,mode){
+  const grid=celSplitCells(txt).map(r=>r.map(c=>c.trim())).filter(r=>r.some(c=>c));
+  if(!grid.length)return {rows:[],refs:false};
+  const hi=grid.findIndex(celIsHeader);
+  const map=hi>=0?celHeaderMap(grid[hi]):null;
+  const data=grid.filter((r,i)=>i!==hi&&!celIsHeader(r));
+  let vStart,refs,pick;
+  if(map){
+    vStart=Math.min(...['freq','refFreq','cel','refCel'].filter(k=>map[k]!=null).map(k=>map[k]));
+    refs=mode!=='norefs'&&(map.refFreq!=null||map.refCel!=null);
+    pick=(c,k)=>map[k]!=null?(c[map[k]]||''):'';
+  }else{
+    const tally={};
+    data.forEach(c=>{const i=c.findIndex((x,j)=>j>0&&celIsNum(x));if(i>0)tally[i]=(tally[i]||0)+1;});
+    vStart=+(Object.keys(tally).sort((a,b)=>tally[b]-tally[a]||a-b)[0]||1);
+    const wt={};data.forEach(c=>{let n=c.length;while(n>vStart&&!c[n-1])n--;const w=n-vStart;if(w>0)wt[w]=(wt[w]||0)+1;});
+    const width=+(Object.keys(wt).sort((a,b)=>wt[b]-wt[a]||b-a)[0]||0);
+    refs=mode==='auto'?width>=3:mode==='refs';
+    const pos=refs?{freq:0,refFreq:1,cel:2,refCel:3}:{freq:0,cel:1};
+    pick=(c,k)=>pos[k]!=null?(c[vStart+pos[k]]||''):'';
+  }
+  const lead=c=>{for(let j=0;j<Math.max(vStart,1);j++)if(c[j])return j;return -1;};
+  const base=Math.min(99,...data.map(lead).filter(j=>j>=0));
+  const rows=[];
+  data.forEach(c=>{
+    const j=lead(c);if(j<0)return;
+    const prev=rows.length?rows[rows.length-1].level:-1;
+    const level=Math.max(0,Math.min(j-base,prev+1,5));
+    rows.push({poblacion:c[j],freq:pick(c,'freq'),refFreq:refs?pick(c,'refFreq'):'',cel:pick(c,'cel'),refCel:refs?pick(c,'refCel'):'',level});
+  });
+  return {rows,refs};
 }
 function rCelPaste(){
   const r=rGet();if(!r)return;
   const ta=document.getElementById('celPaste');const txt=(ta&&ta.value||'').replace(/ /g,' ');
   if(!txt.trim()){toast('Pega primero la tabla',{icon:'alert'});return;}
-  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
   const mode=celPasteMode();
-  const refs=(mode==='auto')?celDetectRefs(lines):(mode==='refs');
-  const rows=[];
-  lines.forEach(line=>{
-    const c=line.split('\t');
-    const pob=(c[0]||'').trim();
-    if(!pob||/^poblaci/i.test(pob))return;
-    rows.push(refs
-      ? {poblacion:pob,freq:(c[1]||'').trim(),refFreq:(c[2]||'').trim(),cel:(c[3]||'').trim(),refCel:(c[4]||'').trim(),level:0}
-      : {poblacion:pob,freq:(c[1]||'').trim(),refFreq:'',cel:(c[2]||'').trim(),refCel:'',level:0});
-  });
+  const {rows,refs}=celParseRows(txt,mode);
   if(!rows.length){toast('No se reconocieron filas. Pega desde Excel (columnas separadas por tabulador).',{icon:'alert'});return;}
   r.celRows=rows;save();refreshReportEditor();
   toast(rows.length+' filas cargadas ('+(refs?'con referencias':'sin referencias')+(mode==='auto'?', detectado automáticamente':'')+')',{icon:'sheet'});
 }
 function rCelAdd(){const r=rGet();if(!r)return;r.celRows.push({poblacion:'',freq:'',refFreq:'',cel:'',refCel:'',level:0});save();refreshReportEditor();}
 function rCelSet(i,f,v){const r=rGet();if(r&&r.celRows[i]){r.celRows[i][f]=nmu(v);save();updateCelVerify();updateCelColors();}}
-function updateCelColors(){const r=rGet();const tb=document.querySelector('#celTable tbody');if(!r||!tb)return;tb.querySelectorAll('tr').forEach((tr,i)=>{const row=r.celRows[i];if(!row)return;const inp=tr.querySelectorAll('.rp-cell');if(inp[1])inp[1].classList.toggle('oor',celOOR(row.freq,row.refFreq));if(inp[3])inp[3].classList.toggle('oor',celOOR(row.cel,row.refCel));});}
+function updateCelColors(){const r=rGet();const tb=document.querySelector('#celTable tbody');if(!r||!tb)return;tb.querySelectorAll('tr').forEach((tr,i)=>{const row=r.celRows[i];if(!row)return;const fi=tr.querySelector('.rp-cell[data-f="freq"]'),ci=tr.querySelector('.rp-cell[data-f="cel"]');if(fi)fi.classList.toggle('oor',celOOR(row.freq,row.refFreq));if(ci)ci.classList.toggle('oor',celOOR(row.cel,row.refCel));});}
 function rCelDel(i){const r=rGet();if(!r)return;r.celRows.splice(i,1);save();refreshReportEditor();}
 /* Tras mover filas, ningún nivel puede saltar más de uno respecto de la fila anterior. */
 function celNormalizeLevels(rows){let prev=-1;rows.forEach(row=>{let l=row.level||0;if(l<0)l=0;if(l>prev+1)l=prev+1;row.level=l;prev=l;});}
@@ -8036,6 +8105,36 @@ function celVerifyHtml(r){
 }
 function updateCelVerify(){const el=document.querySelector('.cel-verify');const r=rGet();if(!el||!r)return;const tmp=document.createElement('div');tmp.innerHTML=celVerifyHtml(r).trim();if(tmp.firstChild)el.replaceWith(tmp.firstChild);}
 /* estudios */
+/* Máscara de fecha dd/mm/aaaa: al escribir los números se insertan solas las barras.
+   «1/» se completa a «01/»; al borrar no se vuelve a poner la barra final. Si el
+   campo lleva letras (p.ej. «pendiente») se deja tal cual. */
+function dateMask(el,ev){
+  const v=el.value;
+  if(/[^\d\/\-.\s]/.test(v))return;
+  const deleting=!!(ev&&ev.inputType&&ev.inputType.indexOf('delete')===0);
+  const atEnd=el.selectionStart===v.length;
+  const digitsBefore=v.slice(0,el.selectionStart).replace(/\D/g,'').length;
+  const max=[2,2,4],parts=[''];
+  for(const ch of v){
+    const k=parts.length-1;
+    if(/\d/.test(ch)){
+      if(parts[k].length>=max[k]){if(k===2)break;parts.push('');}
+      parts[parts.length-1]+=ch;
+    }else if(parts[k]&&k<2){
+      if(parts[k].length===1)parts[k]='0'+parts[k];
+      parts.push('');
+    }
+  }
+  while(parts.length>1&&!parts[parts.length-1])parts.pop();
+  let out=parts.join('/');
+  const k=parts.length-1;
+  if(k<2&&parts[k].length===max[k]&&(!deleting||/\/$/.test(v)))out+='/';
+  if(out===v)return;
+  el.value=out;
+  let pos=out.length;
+  if(!atEnd){let n=0;pos=0;while(pos<out.length&&n<digitsBefore){if(/\d/.test(out[pos]))n++;pos++;}}
+  try{el.setSelectionRange(pos,pos);}catch(_){}
+}
 function rEstAdd(){const r=rGet();if(!r)return;r.estudios.push({estudio:'',fecha:''});save();refreshReportEditor();}
 function rEstSet(i,f,v){const r=rGet();if(r&&r.estudios[i])r.estudios[i][f]=nmu(v),save();}
 function rEstDel(i){const r=rGet();if(!r)return;r.estudios.splice(i,1);save();refreshReportEditor();}
@@ -8109,31 +8208,32 @@ function renderReports(c){
   c.innerHTML=`<div class="wrap"><div class="hero"><div><div class="eyebrow">Informes</div><h1 class="title">Informes</h1><p class="sub">Genera informes de resultados en Word (.docx) y PDF.</p></div><button class="btn btn-p" onclick="rNew()">${ic('plus',16)} Nuevo informe</button></div>${body}</div>`;
 }
 function reportEditor(r){
-  const finfo=(label,f,ph)=>`<div class="mfld"><label class="mlbl">${label}</label><input class="minp" value="${esc(r.info[f]||'')}" placeholder="${ph||''}" onchange="rSetInfo('${f}',this.value)"></div>`;
+  const finfo=(label,f,ph,date)=>`<div class="mfld"><label class="mlbl">${label}</label><input class="minp" value="${esc(r.info[f]||'')}" placeholder="${ph||''}"${date?' inputmode="numeric" oninput="dateMask(this,event)"':''} onchange="rSetInfo('${f}',this.value)"></div>`;
   const logoBox=(which)=>{const v=imgSrc(which===2?r.header.logo2:r.header.logo);const wmm=which===2?(r.header.logoW2||45):(r.header.logoW||95);return `<div class="rp-logo">${v?`<img src="${v}" alt="logo" style="width:${wmm}mm;max-width:100%;height:auto">`:`<span class="rp-logo-ph">${ic('report',22)}<br>Logo ${which}</span>`}<div class="rp-logo-acts"><label class="btn btn-g sm">${ic('upload',13)} ${v?'Cambiar':'Subir'}<input type="file" accept="image/*" style="display:none" onchange="rSetLogo(${which},this)"></label>${v?`<button class="btn btn-g sm" onclick="rClearLogo(${which})">${ic('x',13)}</button>`:''}</div>${v?`<div class="rp-logo-size">Ancho <input type="number" min="10" max="200" step="1" value="${wmm}" onchange="rSetLogoW(${which},this.value)"> mm</div>`:''}</div>`;};
 
   // celularidad
-  const celHead=['Población','Frecuencia (%)','Referencia (%)','Células/µL','Referencia (células/µL)'];
   const pasteMode=celPasteMode();
+  const showRefs=celShowRefs(r);
+  const celHead=showRefs?['Población','Frecuencia (%)','Referencia (%)','Células/µL','Referencia (células/µL)']:['Población','Frecuencia (%)','Células/µL'];
   const pasteCols=pasteMode==='norefs'
     ? '(columnas: Población, Frecuencia %, Células/µl)'
     : pasteMode==='refs'
       ? '(columnas: Población, Frecuencia %, Referencia %, Células/µl, Referencia células/µl)'
       : '(con o sin columnas de referencia: se detecta solo)';
-  const celFields=['poblacion','freq','refFreq','cel','refCel'];
+  const celFields=showRefs?['poblacion','freq','refFreq','cel','refCel']:['poblacion','freq','cel'];
   const celRowsHtml=r.celRows.length?r.celRows.map((row,i)=>{
     const lvl=row.level||0;const lc=Math.min(lvl,5);
     const cells=celFields.map((f,ci)=>{
       const oor=(f==='freq'&&celOOR(row.freq,row.refFreq))||(f==='cel'&&celOOR(row.cel,row.refCel));
-      const inp=`<input class="rp-cell${oor?' oor':''}" title="${oor?'Fuera del rango de referencia':''}" value="${esc(row[f]||'')}" onchange="rCelSet(${i},'${f}',this.value)">`;
+      const inp=`<input class="rp-cell${oor?' oor':''}" data-f="${f}" title="${oor?'Fuera del rango de referencia':''}" value="${esc(row[f]||'')}" onchange="rCelSet(${i},'${f}',this.value)">`;
       if(ci===0)return `<td><div class="rp-pob" style="padding-left:${lvl*16}px"><span class="lvl-chip lvl-${lc}" title="Nivel ${lvl}">${lvl===0?'GRAL':'N'+lvl}</span>${inp}</div></td>`;
       return `<td>${inp}</td>`;
     }).join('');
     return `<tr>${cells}<td class="rp-rowacts"><button class="sc-ibtn" title="Subir fila" ${i===0?'disabled':''} onclick="rCelMove(${i},-1)">${ic('arrow-up',15)}</button><button class="sc-ibtn" title="Bajar fila" ${i===r.celRows.length-1?'disabled':''} onclick="rCelMove(${i},1)">${ic('arrow-down',15)}</button><button class="sc-ibtn" title="Menos nivel" onclick="rCelIndent(${i},-1)">${ic('arrow-left',15)}</button><button class="sc-ibtn" title="Más nivel (subpoblación)" onclick="rCelIndent(${i},1)">${ic('arrow-right',15)}</button><button class="sc-ibtn" title="Eliminar fila" onclick="rCelDel(${i})">${ic('trash',16)}</button></td></tr>`;
-  }).join(''):`<tr><td colspan="6" class="empty-row">Sin filas. Pega la tabla desde Excel o añade filas, y usa las flechas para reordenarlas y anidar subpoblaciones.</td></tr>`;
+  }).join(''):`<tr><td colspan="${celHead.length+1}" class="empty-row">Sin filas. Pega la tabla desde Excel o añade filas, y usa las flechas para reordenarlas y anidar subpoblaciones.</td></tr>`;
 
   // estudios
-  const estRowsHtml=r.estudios.length?r.estudios.map((row,i)=>`<tr><td><input class="rp-cell" value="${esc(row.estudio||'')}" placeholder="Estudio realizado" onchange="rEstSet(${i},'estudio',this.value)"></td><td style="width:160px"><input class="rp-cell" value="${esc(row.fecha||'')}" placeholder="dd/mm/aaaa" onchange="rEstSet(${i},'fecha',this.value)"></td><td><button class="sc-ibtn" title="Eliminar" onclick="rEstDel(${i})">${ic('trash',16)}</button></td></tr>`).join(''):`<tr><td colspan="3" class="empty-row">Sin estudios. Añade filas.</td></tr>`;
+  const estRowsHtml=r.estudios.length?r.estudios.map((row,i)=>`<tr><td><input class="rp-cell" value="${esc(row.estudio||'')}" placeholder="Estudio realizado" onchange="rEstSet(${i},'estudio',this.value)"></td><td style="width:160px"><input class="rp-cell" value="${esc(row.fecha||'')}" placeholder="dd/mm/aaaa" inputmode="numeric" oninput="dateMask(this,event)" onchange="rEstSet(${i},'fecha',this.value)"></td><td><button class="sc-ibtn" title="Eliminar" onclick="rEstDel(${i})">${ic('trash',16)}</button></td></tr>`).join(''):`<tr><td colspan="3" class="empty-row">Sin estudios. Añade filas.</td></tr>`;
 
   return `<div class="crumb" style="margin-bottom:14px"><button class="crumb-link" onclick="rHome()">${ic('report',18)} Informes</button><span style="color:var(--tx3)">/</span><span style="color:var(--tx2)">Editar</span></div>
     <div class="phead"><span class="phead-dot" style="background:var(--violet)"></span>
@@ -8161,13 +8261,13 @@ function reportEditor(r){
       <div class="rp-card"><div class="rp-grid">
         ${finfo('Título del documento','titulo','Informe de resultados')}
         ${finfo('Nº de informe','nInforme')}
-        ${finfo('Fecha de emisión','fechaEmision','dd/mm/aaaa')}
+        ${finfo('Fecha de emisión','fechaEmision','dd/mm/aaaa',1)}
         ${finfo('Solicitante / Remitente','solicitante')}
-        ${finfo('Fecha de solicitud','fechaSolicitud','dd/mm/aaaa')}
+        ${finfo('Fecha de solicitud','fechaSolicitud','dd/mm/aaaa',1)}
         ${finfo('CIF','cif')}
         ${finfo('Nº de estudio en el Servicio','nEstudio')}
         ${finfo('Identificación del paciente','idPaciente')}
-        ${finfo('Fecha de toma de muestra','fechaToma','dd/mm/aaaa')}
+        ${finfo('Fecha de toma de muestra','fechaToma','dd/mm/aaaa',1)}
         ${finfo('Tipo de muestra/s','tipoMuestra')}
       </div></div>
     </div>
@@ -8176,7 +8276,7 @@ function reportEditor(r){
       <div class="rp-card">
         <div class="mfld"><label class="mlbl">Título del apartado</label><input class="minp" value="${esc(r.celTitle||'')}" onchange="rSetTop('celTitle',this.value)"></div>
         <label class="mlbl">${ic('paste',13)} Pegar desde Excel ${pasteCols}</label>
-        <textarea id="celPaste" class="minp" rows="3" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
+        <textarea id="celPaste" class="minp" rows="3" onpaste="celOnPaste(event)" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
         <div class="cel-paste-mode">
           <span class="cpm-lbl">Columnas del pegado</span>
           <div class="seg">
@@ -8224,7 +8324,10 @@ function parseDataUrl(u){const m=/^data:([^;]+);base64,([\s\S]*)$/.exec(u||'');r
 function imgDims(src){return new Promise(res=>{const im=new Image();im.onload=()=>res({w:im.naturalWidth||300,h:im.naturalHeight||100});im.onerror=()=>res({w:300,h:100});im.src=src;});}
 function downloadBytes(name,u8,mime){const blob=new Blob([u8],{type:mime||'application/octet-stream'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 function safeFile(s){return (s||'informe').replace(/[^0-9A-Za-zÀ-ÿ_ -]+/g,'_').replace(/\s+/g,'_').slice(0,60);}
-function reportFileName(r,ext){const pre=((r.info&&r.info.nEstudio)||'').toString().trim();return (pre?safeFile(pre)+'_':'')+safeFile(r.name)+'.'+ext;}
+/* Nombre de exportación: «Nombre_Sufijo». Se respetan espacios y tildes; sólo se
+   quitan los caracteres que Windows no admite en un nombre de archivo. */
+function exportBase(name,suffix){const n=String(name||'').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').replace(/\s+/g,' ').trim().replace(/[. ]+$/,'').slice(0,80)||suffix;return n+'_'+suffix;}
+function reportFileName(r,ext){return exportBase(r.name,'Informe')+'.'+ext;}
 // Ventana emergente discreta tras exportar: abrir archivo o carpeta (solo en la app de escritorio, que conoce la ruta)
 function showExportPopup(path){
   if(!path||!(DESKTOP&&window.desktop.openPath)){toast('Exportado.',{icon:'circle-check'});return;}
@@ -8305,20 +8408,18 @@ function wTableSimple(headers,rows,widths){
 function wFenoRuns(text){const s=String(text==null?'':text);const i=s.indexOf(':');if(i<0)return [wRun(s,{sz:20})];return [wRun(s.slice(0,i+1),{b:true,sz:20}),wRun(s.slice(i+1),{sz:20})];}
 // Tabla de celularidad para Word: valores fuera del rango de referencia en rojo
 function wCelTable(r){
-  const heads=['Población','Frecuencia (%)','Referencia (%)','Células/µL','Referencia (células/µL)'];
-  const widths=[3300,1500,1700,1400,1738];const total=widths.reduce((a,w)=>a+w,0);
+  const refs=celHasRefs(r);
+  const heads=refs?['Población','Frecuencia (%)','Referencia (%)','Células/µL','Referencia (células/µL)']:['Población','Frecuencia (%)','Células/µL'];
+  const widths=refs?[3300,1500,1700,1400,1738]:[4838,2400,2400];const total=widths.reduce((a,w)=>a+w,0);
   const grid='<w:tblGrid>'+widths.map(w=>'<w:gridCol w:w="'+w+'"/>').join('')+'</w:tblGrid>';
   const hd='<w:tr>'+heads.map((h,i)=>wCell(wPara([wRun(h,{b:true,sz:18})],{after:0}),widths[i])).join('')+'</w:tr>';
   const RED='C00000';
   const body=r.celRows.map(x=>{
     const fO=celOOR(x.freq,x.refFreq),cO=celOOR(x.cel,x.refCel);
-    const cells=[
-      wCell(wPara([wRun(x.poblacion,{sz:18})],{after:0}),widths[0]),
-      wCell(wPara([wRun(x.freq,{sz:18,color:fO?RED:undefined})],{after:0}),widths[1]),
-      wCell(wPara([wRun(x.refFreq,{sz:18})],{after:0}),widths[2]),
-      wCell(wPara([wRun(x.cel,{sz:18,color:cO?RED:undefined})],{after:0}),widths[3]),
-      wCell(wPara([wRun(x.refCel,{sz:18})],{after:0}),widths[4])
-    ];
+    const vals=refs
+      ?[[x.poblacion],[x.freq,fO],[x.refFreq],[x.cel,cO],[x.refCel]]
+      :[[x.poblacion],[x.freq,fO],[x.cel,cO]];
+    const cells=vals.map((v,i)=>wCell(wPara([wRun(v[0],{sz:18,color:v[1]?RED:undefined})],{after:0}),widths[i]));
     return '<w:tr>'+cells.join('')+'</w:tr>';
   }).join('');
   return '<w:tbl><w:tblPr><w:tblW w:w="'+total+'" w:type="dxa"/><w:tblBorders><w:bottom w:val="single" w:sz="4" w:space="0" w:color="C8D0D8"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="E7EBEF"/></w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr>'+grid+hd+body+'</w:tbl>';
@@ -8385,7 +8486,7 @@ async function buildReportDocx(r){
   }
   // Comentario / Conclusión
   if((r.comentario||'').trim()){body.push(wHeading('COMENTARIO'));(r.comentario).split('\n').forEach(l=>body.push(wPara([wRun(l,{sz:20})],{after:120})));}
-  if((r.conclusion||'').trim()){body.push(wHeading('CONCLUSIÓN'));(r.conclusion).split('\n').forEach(l=>body.push(wPara([wRun(l,{sz:20})],{after:120})));}
+  if((r.conclusion||'').trim()){if((r.comentario||'').trim())body.push(wPara([wRun('',{sz:20})],{after:0}));body.push(wHeading('CONCLUSIÓN'));(r.conclusion).split('\n').forEach(l=>body.push(wPara([wRun(l,{sz:20})],{after:120})));}
 
   const sectPr='<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="2100" w:right="1134" w:bottom="1134" w:left="1134" w:header="340" w:footer="708" w:gutter="0"/></w:sectPr>';
   const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>'+body.join('')+sectPr+'</w:body></w:document>';
@@ -8420,7 +8521,8 @@ async function rExportDocx(id){
 function reportHtml(r){
   const fs=r.fenoId?phSample(r.fenoId):null;
   const logos=[{src:imgSrc(r.header.logo),mm:(r.header.logoW||95)},{src:imgSrc(r.header.logo2),mm:(r.header.logoW2||45)}].filter(x=>x.src).map(l=>'<img src="'+l.src+'" style="width:'+l.mm+'mm">').join('');
-  const cel=r.celRows.length?('<div class="h2">'+xe(r.celTitle||'CELULARIDAD')+'</div><table class="t"><thead><tr><th>Población</th><th>Frecuencia (%)</th><th>Referencia (%)</th><th>Células/µL</th><th>Referencia (células/µL)</th></tr></thead><tbody>'+r.celRows.map(x=>{const fO=celOOR(x.freq,x.refFreq),cO=celOOR(x.cel,x.refCel);return '<tr><td>'+xe(x.poblacion)+'</td><td'+(fO?' class="oor"':'')+'>'+xe(x.freq)+'</td><td>'+xe(x.refFreq)+'</td><td'+(cO?' class="oor"':'')+'>'+xe(x.cel)+'</td><td>'+xe(x.refCel)+'</td></tr>';}).join('')+'</tbody></table>'):'';
+  const refs=celHasRefs(r);
+  const cel=r.celRows.length?('<div class="h2">'+xe(r.celTitle||'CELULARIDAD')+'</div><table class="t"><thead><tr><th>Población</th><th>Frecuencia (%)</th>'+(refs?'<th>Referencia (%)</th>':'')+'<th>Células/µL</th>'+(refs?'<th>Referencia (células/µL)</th>':'')+'</tr></thead><tbody>'+r.celRows.map(x=>{const fO=celOOR(x.freq,x.refFreq),cO=celOOR(x.cel,x.refCel);return '<tr><td>'+xe(x.poblacion)+'</td><td'+(fO?' class="oor"':'')+'>'+xe(x.freq)+'</td>'+(refs?'<td>'+xe(x.refFreq)+'</td>':'')+'<td'+(cO?' class="oor"':'')+'>'+xe(x.cel)+'</td>'+(refs?'<td>'+xe(x.refCel)+'</td>':'')+'</tr>';}).join('')+'</tbody></table>'):'';
   const est=r.estudios.length?('<div class="h2">ESTUDIOS REALIZADOS</div><table class="t"><thead><tr><th>Estudios realizados</th><th style="width:160px">Fecha</th></tr></thead><tbody>'+r.estudios.map(e=>'<tr><td>'+xe(e.estudio)+'</td><td>'+xe(e.fecha)+'</td></tr>').join('')+'</tbody></table>'):'';
   let feno='';
   const fenoHtmlLine=(text)=>{const s=String(text==null?'':text);const i=s.indexOf(':');if(i<0)return '<p class="clone">'+xe(s)+'</p>';return '<p class="clone"><b>'+xe(s.slice(0,i+1))+'</b>'+xe(s.slice(i+1))+'</p>';};
@@ -8430,8 +8532,8 @@ function reportHtml(r){
   const pairs=[['Nº de informe',r.info.nInforme],['Fecha de emisión',r.info.fechaEmision],['Solicitante / Remitente',r.info.solicitante],['Fecha de solicitud',r.info.fechaSolicitud],['CIF',r.info.cif],['Nº de estudio en el Servicio',r.info.nEstudio],['Identificación del paciente',r.info.idPaciente],['Fecha de toma de muestra',r.info.fechaToma],['Tipo de muestra/s',r.info.tipoMuestra]];
   const info=pairs.filter(p=>(p[1]||'').toString().trim()!=='').map(p=>'<p class="lv"><b>'+xe(p[0])+':</b> '+xe(p[1])+'</p>').join('');
   const com=(r.comentario||'').trim()?('<div class="h2">COMENTARIO</div>'+r.comentario.split('\n').map(l=>'<p>'+xe(l)+'</p>').join('')):'';
-  const con=(r.conclusion||'').trim()?('<div class="h2">CONCLUSIÓN</div>'+r.conclusion.split('\n').map(l=>'<p>'+xe(l)+'</p>').join('')):'';
-  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>'+xe(r.name)+'</title><style>'
+  const con=(r.conclusion||'').trim()?((com?'<p>&nbsp;</p>':'')+'<div class="h2">CONCLUSIÓN</div>'+r.conclusion.split('\n').map(l=>'<p>'+xe(l)+'</p>').join('')):'';
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>'+xe(exportBase(r.name,'Informe'))+'</title><style>'
     +'@page{size:A4;margin:18mm 16mm;}*{box-sizing:border-box}body{font-family:Calibri,Arial,sans-serif;color:#16191d;font-size:10.5pt;line-height:1.45;margin:0}'
     +'.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:14px}'
     +'.hd .logos{align-self:center}.hd .logos img{height:auto;object-fit:contain;margin-right:8px;vertical-align:middle}.hd .svc{text-align:right;font-size:9.5pt}.hd .svc .s1{font-weight:700}.hd .svc a{color:#0563C1}'
@@ -8949,7 +9051,7 @@ function dropBranch(pid,sid,fromId,toId){if(fromId===toId)return;const p=proj(pi
 
 /* ── Impresión / PDF del flujo y de la matriz ── */
 function printRootEl(){let r=document.getElementById('printRoot');if(!r){r=document.createElement('div');r.id='printRoot';document.body.appendChild(r);}return r;}
-function doPrint(html,pageCss){const r=printRootEl();r.innerHTML=(pageCss?'<style>'+pageCss+'</style>':'')+`<div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;color:#111;padding:24px">${html}</div>`;const prevZoom=document.documentElement.style.zoom;document.documentElement.style.zoom='1';setTimeout(()=>{window.print();document.documentElement.style.zoom=prevZoom;setTimeout(()=>{r.innerHTML='';},400);},60);}
+function doPrint(html,pageCss,docTitle){const r=printRootEl();const prevTitle=document.title;if(docTitle)document.title=docTitle;r.innerHTML=(pageCss?'<style>'+pageCss+'</style>':'')+`<div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;color:#111;padding:24px">${html}</div>`;const prevZoom=document.documentElement.style.zoom;document.documentElement.style.zoom='1';setTimeout(()=>{window.print();document.documentElement.style.zoom=prevZoom;setTimeout(()=>{r.innerHTML='';document.title=prevTitle;},400);},60);}
 function printFlow(pid){
   const p=proj(pid);if(!p)return;const sm=p.samples||[];
   const steps=(p.steps||[]).map((s,i)=>{const vc=sm.filter(x=>x.validations&&x.validations[s.id]).length;const pct=sm.length?Math.round(vc/sm.length*100):0;
@@ -8993,7 +9095,7 @@ function phPrintMatrix(sid){
   doPrint(`<div><h1>${esc(s.title||'Fenotipo')}</h1>
     <div class="sub">${(s.desc||'').trim()?esc(s.desc)+' · ':''}${pops.length} poblaciones · ${markers.length} marcadores · ${new Date().toLocaleDateString('es-ES')}</div>
     <table><thead><tr><th class="pop">Población</th>${th}</tr></thead><tbody>${body}</tbody></table>
-    <div class="lgs">${leyenda}</div></div>`,css);
+    <div class="lgs">${leyenda}</div></div>`,css,exportBase(s.title,'Fenotipo'));
 }
 /* ── Cableado de eventos globales ── */
 (function wireUI(){
