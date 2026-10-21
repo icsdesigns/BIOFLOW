@@ -3197,7 +3197,7 @@ function renderSel(){
   const {totEv,files}=renderSummary(nodes,av);
   const ok=nodes.length>0 && Y.parSel.size>0 && totEv>0;
   $('zip').disabled=!ok; $('dir').disabled=!ok;
-  $('zipT').textContent = (desktopSave()?"Guardar ":"Descargar ")+(files===1 ? ".fcs" : "ZIP");
+  $('zipT').textContent = desktopSave() ? (files===1?"Guardar .fcs":"Guardar archivos .fcs") : (files===1?"Descargar .fcs":"Descargar ZIP");
   $('seedWrap').style.visibility = pf().sampling==="random" ? "visible":"hidden";
   $('msg').innerHTML = (!Y.parSel.size && nodes.length) ? '<div class="cy-msg warn">Selecciona al menos un parámetro.</div>' : "";
   updatePreview(); refreshSide(); saveState();
@@ -3360,6 +3360,31 @@ function download(blob,name){
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000);
 }
 function done(msg,kind){ const el=$('msg'); if(el) el.innerHTML=`<div class="cy-msg ${kind||'ok'}">${msg}</div>`; }
+/* App de escritorio: archivos .fcs sueltos, sin ZIP. Si el shell ofrece
+   desktop.saveFiles (elige carpeta una vez y escribe todos), se usa; si no, se
+   guarda cada archivo con «Guardar como», uno tras otro. */
+async function exportIndividual(){
+  try{
+    const files=await buildExports();
+    if(window.desktop&&window.desktop.saveFiles){
+      busy(true,"Guardando archivos",files.length+" archivo(s)",0.5); await tick();
+      const items=[]; for(const f of files) items.push({name:f.name,b64:bytesToB64(new Uint8Array(await f.blob.arrayBuffer()))});
+      const res=await window.desktop.saveFiles(items,{key:"cyt"});
+      busy(false);
+      if(res&&res.canceled) return;
+      if(!(res&&res.ok)) throw new Error((res&&res.error)||"No se pudieron guardar los archivos.");
+      rememberPath(res.dir?res.dir.replace(/[\\/]+$/,"")+"\\"+files[0].name:""); 
+      done(`Guardados ${files.length} archivo(s) .fcs en «${esc(pf().lastDirName||res.dir||"")}».`); return;
+    }
+    let n=0;
+    for(let i=0;i<files.length;i++){
+      busy(true,`Guardando ${i+1} de ${files.length}`,files[i].name,i/files.length); await tick(); busy(false);
+      if(!(await saveOut(files[i].blob,files[i].name))) break;
+      n++;
+    }
+    busy(false); if(n) done(`Guardados ${n} de ${files.length} archivo(s) .fcs.`);
+  }catch(e){ busy(false); console.error(e); done("Error al guardar: "+esc(e.message),"err"); }
+}
 async function exportDownload(){
   try{
     const files=await buildExports();
@@ -3500,7 +3525,7 @@ function onClick(e){
       Y.parSel=new Set(Y.params.filter(isFluo).map(p=>p.idx)); renderParams(); renderSel(); break; }
     case 'mode': setMode(b.dataset.v); break;
     case 'numadd': addNumLen(); break;
-    case 'zip': exportDownload(); break;
+    case 'zip': (desktopSave()?exportIndividual:exportDownload)(); break;
     case 'dir': exportDir(); break;
     case 'showdir': try{ window.desktop.showInFolder(pf().lastPath); }catch(e){} break;
     case 'dirnew': pickDir(true).catch(()=>{}); break;
@@ -3668,7 +3693,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.12';
+const APP_VERSION='2.13';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
