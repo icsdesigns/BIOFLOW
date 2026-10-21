@@ -2284,6 +2284,137 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 
 /* ════════ 20 · IMPRESIÓN ════════ */
 @media print{body *{visibility:hidden}#printRoot,#printRoot *{visibility:visible}#printRoot{position:absolute;inset:0}}
+/* ════════ EXPORTADOR CYT ════════ */
+.cy-hero-act{display:flex;gap:8px;flex-wrap:wrap}
+.cy-note{font-size:12px;color:var(--tx3);margin-top:4px;line-height:1.5}
+.cy-note:empty{display:none}
+.cy-mut{color:var(--tx3)}
+.cy-mono{font-family:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;font-size:12.5px}
+.cy .txt-in{width:100%}
+.cy code,.cy kbd{font-family:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;font-size:11.5px;background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+.cy kbd{border-bottom-width:2px}
+
+/* zona de carga */
+.cy-drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:54px 28px;border:2px dashed var(--bd2);border-radius:var(--r-xl);background:var(--sf);cursor:pointer;color:var(--tx2);transition:border-color .15s var(--ease),background .15s var(--ease)}
+.cy-drop:hover,.cy-drop:focus-visible{border-color:var(--ac);outline:none}
+.cy-drop.over{border-color:var(--ac);background:var(--acl)}
+.cy-drop-ic{width:64px;height:64px;border-radius:18px;background:var(--acl);color:var(--act);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.cy-drop h3{font-size:17px;color:var(--tx)}
+.cy-fine{font-size:12.5px;color:var(--tx3);margin-top:10px;max-width:420px}
+
+/* ficha del archivo */
+.cy-file{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.cy-file-hd{display:flex;align-items:center;gap:12px;min-width:0}
+.cy-file-tx{display:flex;flex-direction:column;min-width:0}
+.cy-file-tx b{font-size:15px;overflow-wrap:anywhere}
+.cy-file-tx span{font-size:12px;color:var(--tx3)}
+.cy-kvs{display:flex;flex-wrap:wrap;gap:8px}
+.cy-kv{display:flex;flex-direction:column;gap:1px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r-s);padding:5px 11px;min-width:0}
+.cy-kv span{font-size:10.5px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3)}
+.cy-kv b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cy-kv.warn{background:var(--pr-bg);border-color:var(--pr-bd)}
+.cy-kv.warn span,.cy-kv.warn b{color:var(--pr-tx)}
+
+/* retícula: árbol + paneles */
+.cy-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:16px;align-items:start}
+@media (max-width:1040px){.cy-grid{grid-template-columns:minmax(0,1fr)}}
+.cy-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.cy-btnrow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* árbol */
+.cy-tree-card{padding:0;overflow:hidden}
+.cy-tree-hd{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.cy-tree-t{display:flex;align-items:center;gap:10px}
+.cy-tree-t b{font-size:15px;font-weight:650}
+.cy-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cy-search{flex:1;min-width:160px;padding:5px 10px}
+.cy-chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--tx2);cursor:pointer;user-select:none;white-space:nowrap}
+.cy-tree-wrap{overflow:auto;max-height:calc(100dvh - 330px);min-height:220px}
+table.cy-tree{width:100%;border-collapse:collapse;font-size:13.5px}
+.cy-tree th{position:sticky;top:0;z-index:1;background:var(--sf2);text-align:right;font-size:11px;font-weight:650;letter-spacing:.03em;color:var(--tx3);padding:7px 10px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.cy-tree th:first-child{text-align:left;padding-left:14px;width:100%}
+.cy-tree td{padding:1px 10px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--tx2)}
+.cy-tree td:first-child{text-align:left;white-space:normal;padding-left:8px;color:var(--tx)}
+.cy-tree td:last-child,.cy-tree th:last-child{padding-right:16px}
+.cy-tree tbody tr:hover td{background:var(--sf2)}
+.cy-tree tr.cy-on td{background:var(--acl)}
+.cy-tree tr.cy-ref .cy-nm{font-weight:650}
+.cy-cell{display:flex;align-items:center;gap:6px;min-height:28px}
+.cy-tw{width:18px;height:18px;border:0;background:none;padding:0;cursor:pointer;color:var(--tx3);display:inline-grid;place-items:center;flex:none;border-radius:4px}
+.cy-tw:hover{background:var(--sf3);color:var(--tx)}
+.cy-tw.none{visibility:hidden}
+.cy-tw svg{transition:transform .14s var(--ease)}
+.cy-tw.open svg{transform:rotate(90deg)}
+.cy-dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.cy-nm{overflow-wrap:anywhere}
+.cy-tag{font-size:10px;font-weight:700;padding:0 6px;border-radius:5px;background:var(--acl);color:var(--act);margin-left:4px}
+.cy-mark{background:#FFE58A;color:#111;border-radius:2px}
+.cy-hint{font-size:12px;color:var(--tx3);padding:10px 16px;border-top:1px solid var(--bd)}
+
+/* tarjeta de exportación */
+.cy-exp{display:flex;flex-direction:column;gap:12px}
+.cy-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cy-sum div{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r-s);padding:7px 10px;min-width:0}
+.cy-sum b{display:block;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cy-sum span{font-size:11.5px;color:var(--tx3)}
+.cy-acts{display:flex;gap:8px;flex-wrap:wrap}
+.cy-acts .btn{flex:1;justify-content:center;height:34px}
+.cy-acts .btn:disabled{opacity:.45;pointer-events:none}
+#cy-msg:empty{display:none}
+.cy-msg{padding:8px 11px;border-radius:var(--r-s);font-size:12.5px;margin-top:8px;line-height:1.45}
+#cy-msg .cy-msg{margin-top:0}
+.cy-msg.ok{background:var(--acl);color:var(--act)}
+.cy-msg.warn{background:var(--pr-bg);color:var(--pr-tx)}
+.cy-msg.err{background:var(--dg-bg);color:var(--dg)}
+
+/* contenido de los paneles */
+.cy-f{display:flex;flex-direction:column;gap:5px;margin-top:12px;min-width:0}
+.cy-f>label,.cy-f>.cy-lbl{font-size:12.5px;font-weight:600;color:var(--tx2)}
+.cy-f .sel{height:32px;width:100%}
+.cy-f .txt-in{padding:6px 10px}
+.cfg-pnl-pad>.cy-f:first-child,.cfg-pnl-pad>.cy-btnrow:first-child{margin-top:12px}
+.cy-seg{width:100%;display:flex}
+.cy-seg .seg-btn{flex:1;justify-content:center;height:30px}
+.cy-row3{display:grid;grid-template-columns:1.2fr 1.1fr .9fr;gap:8px}
+.cy-inl{display:flex;gap:8px;align-items:center}
+.cy-inl .txt-in{flex:1;min-width:0}
+.cy-inl .sel{width:132px;flex:none}
+.cy-plist{margin-top:10px;max-height:240px;overflow:auto;border:1px solid var(--bd);border-radius:var(--r-s)}
+.cy-prow{display:flex;align-items:center;gap:9px;padding:5px 10px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:13px}
+.cy-prow:last-child{border-bottom:0}
+.cy-prow:hover{background:var(--sf2)}
+.cy-ch{margin-left:auto;font-size:11.5px;color:var(--tx3);font-family:ui-monospace,"Cascadia Mono",Consolas,monospace}
+.cy-tokens{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.cy-tok{border:1px dashed var(--bd2);background:var(--sf2);border-radius:6px;padding:1px 8px;font-size:12px;cursor:pointer;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;color:var(--tx2);transition:border-color .12s,color .12s}
+.cy-tok:hover{border-style:solid;border-color:var(--ac);color:var(--act)}
+.cy-numrow{display:grid;grid-template-columns:auto minmax(0,1fr) 96px auto;gap:8px;align-items:center;margin-top:6px;font-size:12.5px}
+.cy-numrow.add{grid-template-columns:1fr 84px auto}
+.cy-numrow .txt-in{padding:4px 8px;font-size:12.5px}
+.cy-det{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cy-slist{margin-top:12px;border:1px solid var(--bd);border-radius:var(--r-s);max-height:300px;overflow:auto}
+.cy-srow{display:grid;grid-template-columns:auto minmax(0,1fr) auto 78px auto;gap:8px;align-items:center;padding:5px 9px;border-bottom:1px solid var(--bd);font-size:13px}
+.cy-srow:last-child{border-bottom:0}
+.cy-srow .txt-in{padding:4px 8px;font-size:12.5px}
+.cy-srow .cy-ov{text-align:right}
+.cy-avail{font-size:12px;color:var(--tx3);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cy-empty{padding:16px;text-align:center;color:var(--tx3);font-size:13px}
+#cy-namePrev .cy-msg:first-of-type{margin-top:6px}
+
+/* espera */
+.cy-busy{position:fixed;inset:0;background:var(--ov);display:none;place-items:center;z-index:900}
+.cy-busy.on{display:grid}
+.cy-busy-box{background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r-l);padding:20px 24px;min-width:300px;max-width:90vw;box-shadow:var(--shadow-pop)}
+.cy-busy-t{display:flex;align-items:center;gap:10px;font-size:14px}
+.cy-bar{height:6px;background:var(--sf3);border-radius:99px;overflow:hidden;margin-top:12px}
+.cy-bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .15s}
+.cy-spin{width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:cy-sp 1s linear infinite;display:inline-block;flex:none}
+@keyframes cy-sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.cy-spin{animation-duration:2.4s}.cy-tw svg{transition:none}}
+@media (max-width:560px){
+  .cy-row3{grid-template-columns:1fr 1fr}
+  .cy-inl{flex-direction:column;align-items:stretch}.cy-inl .sel{width:100%}
+  .cy-tree-wrap{max-height:none}
+}
 </style>
 </head>
 <body>
@@ -2344,6 +2475,1051 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
   <input type="file" id="agIcsFile" accept="text/calendar,.ics" style="display:none" onchange="agImportIcsFile(this)">
 </div>
 
+<script>
+/*! fflate v0.8.2 — (c) 2023 Arjun Barrett — MIT License */
+!function(f){typeof module!='undefined'&&typeof exports=='object'?module.exports=f():typeof define!='undefined'&&define.amd?define(f):(typeof self!='undefined'?self:this).fflate=f()}(function(){var _e={};"use strict";var t=(typeof module!='undefined'&&typeof exports=='object'?function(_f){"use strict";var e,t=";var __w=require('worker_threads');__w.parentPort.on('message',function(m){onmessage({data:m})}),postMessage=function(m,t){__w.parentPort.postMessage(m,t)},close=process.exit;self=global";try{e=require("worker_threads").Worker}catch(e){}exports.default=e?function(r,n,o,a,s){var u=!1,i=new e(r+t,{eval:!0}).on("error",(function(e){return s(e,null)})).on("message",(function(e){return s(null,e)})).on("exit",(function(e){e&&!u&&s(Error("exited with code "+e),null)}));return i.postMessage(o,a),i.terminate=function(){return u=!0,e.prototype.terminate.call(i)},i}:function(e,t,r,n,o){setImmediate((function(){return o(Error("async operations unsupported - update to Node 12+ (or Node 10-11 with the --experimental-worker CLI flag)"),null)}));var a=function(){};return{terminate:a,postMessage:a}};return _f}:function(_f){"use strict";var e={};_f.default=function(r,t,s,a,n){var o=new Worker(e[t]||(e[t]=URL.createObjectURL(new Blob([r+';addEventListener("error",function(e){e=e.error;postMessage({$e$:[e.message,e.code,e.stack]})})'],{type:"text/javascript"}))));return o.onmessage=function(e){var r=e.data,t=r.$e$;if(t){var s=Error(t[0]);s.code=t[1],s.stack=t[2],n(s,null)}else n(null,r)},o.postMessage(s,a),o};return _f})({}),n=Uint8Array,r=Uint16Array,e=Int32Array,i=new n([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),o=new n([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),s=new n([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),a=function(t,n){for(var i=new r(31),o=0;o<31;++o)i[o]=n+=1<<t[o-1];var s=new e(i[30]);for(o=1;o<30;++o)for(var a=i[o];a<i[o+1];++a)s[a]=a-i[o]<<5|o;return{b:i,r:s}},u=a(i,2),h=u.b,f=u.r;h[28]=258,f[258]=28;for(var l=a(o,0),c=l.b,p=l.r,v=new r(32768),d=0;d<32768;++d){var g=(43690&d)>>1|(21845&d)<<1;v[d]=((65280&(g=(61680&(g=(52428&g)>>2|(13107&g)<<2))>>4|(3855&g)<<4))>>8|(255&g)<<8)>>1}var y=function(t,n,e){for(var i=t.length,o=0,s=new r(n);o<i;++o)t[o]&&++s[t[o]-1];var a,u=new r(n);for(o=1;o<n;++o)u[o]=u[o-1]+s[o-1]<<1;if(e){a=new r(1<<n);var h=15-n;for(o=0;o<i;++o)if(t[o])for(var f=o<<4|t[o],l=n-t[o],c=u[t[o]-1]++<<l,p=c|(1<<l)-1;c<=p;++c)a[v[c]>>h]=f}else for(a=new r(i),o=0;o<i;++o)t[o]&&(a[o]=v[u[t[o]-1]++]>>15-t[o]);return a},m=new n(288);for(d=0;d<144;++d)m[d]=8;for(d=144;d<256;++d)m[d]=9;for(d=256;d<280;++d)m[d]=7;for(d=280;d<288;++d)m[d]=8;var b=new n(32);for(d=0;d<32;++d)b[d]=5;var w=y(m,9,0),x=y(m,9,1),z=y(b,5,0),k=y(b,5,1),M=function(t){for(var n=t[0],r=1;r<t.length;++r)t[r]>n&&(n=t[r]);return n},S=function(t,n,r){var e=n/8|0;return(t[e]|t[e+1]<<8)>>(7&n)&r},A=function(t,n){var r=n/8|0;return(t[r]|t[r+1]<<8|t[r+2]<<16)>>(7&n)},T=function(t){return(t+7)/8|0},D=function(t,r,e){return(null==r||r<0)&&(r=0),(null==e||e>t.length)&&(e=t.length),new n(t.subarray(r,e))};_e.FlateErrorCode={UnexpectedEOF:0,InvalidBlockType:1,InvalidLengthLiteral:2,InvalidDistance:3,StreamFinished:4,NoStreamHandler:5,InvalidHeader:6,NoCallback:7,InvalidUTF8:8,ExtraFieldTooLong:9,InvalidDate:10,FilenameTooLong:11,StreamFinishing:12,InvalidZipData:13,UnknownCompressionMethod:14};var C=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],I=function(t,n,r){var e=Error(n||C[t]);if(e.code=t,Error.captureStackTrace&&Error.captureStackTrace(e,I),!r)throw e;return e},U=function(t,r,e,a){var u=t.length,f=a?a.length:0;if(!u||r.f&&!r.l)return e||new n(0);var l=!e,p=l||2!=r.i,v=r.i;l&&(e=new n(3*u));var d=function(t){var r=e.length;if(t>r){var i=new n(Math.max(2*r,t));i.set(e),e=i}},g=r.f||0,m=r.p||0,b=r.b||0,w=r.l,z=r.d,C=r.m,U=r.n,F=8*u;do{if(!w){g=S(t,m,1);var E=S(t,m+1,3);if(m+=3,!E){var Z=t[(J=T(m)+4)-4]|t[J-3]<<8,q=J+Z;if(q>u){v&&I(0);break}p&&d(b+Z),e.set(t.subarray(J,q),b),r.b=b+=Z,r.p=m=8*q,r.f=g;continue}if(1==E)w=x,z=k,C=9,U=5;else if(2==E){var O=S(t,m,31)+257,G=S(t,m+10,15)+4,L=O+S(t,m+5,31)+1;m+=14;for(var H=new n(L),j=new n(19),N=0;N<G;++N)j[s[N]]=S(t,m+3*N,7);m+=3*G;var P=M(j),B=(1<<P)-1,Y=y(j,P,1);for(N=0;N<L;){var J,K=Y[S(t,m,B)];if(m+=15&K,(J=K>>4)<16)H[N++]=J;else{var Q=0,R=0;for(16==J?(R=3+S(t,m,3),m+=2,Q=H[N-1]):17==J?(R=3+S(t,m,7),m+=3):18==J&&(R=11+S(t,m,127),m+=7);R--;)H[N++]=Q}}var V=H.subarray(0,O),W=H.subarray(O);C=M(V),U=M(W),w=y(V,C,1),z=y(W,U,1)}else I(1);if(m>F){v&&I(0);break}}p&&d(b+131072);for(var X=(1<<C)-1,$=(1<<U)-1,_=m;;_=m){var tt=(Q=w[A(t,m)&X])>>4;if((m+=15&Q)>F){v&&I(0);break}if(Q||I(2),tt<256)e[b++]=tt;else{if(256==tt){_=m,w=null;break}var nt=tt-254;tt>264&&(nt=S(t,m,(1<<(it=i[N=tt-257]))-1)+h[N],m+=it);var rt=z[A(t,m)&$],et=rt>>4;if(rt||I(3),m+=15&rt,W=c[et],et>3){var it=o[et];W+=A(t,m)&(1<<it)-1,m+=it}if(m>F){v&&I(0);break}p&&d(b+131072);var ot=b+nt;if(b<W){var st=f-W,at=Math.min(W,ot);for(st+b<0&&I(3);b<at;++b)e[b]=a[st+b]}for(;b<ot;++b)e[b]=e[b-W]}}r.l=w,r.p=_,r.b=b,r.f=g,w&&(g=1,r.m=C,r.d=z,r.n=U)}while(!g);return b!=e.length&&l?D(e,0,b):e.subarray(0,b)},F=function(t,n,r){var e=n/8|0;t[e]|=r<<=7&n,t[e+1]|=r>>8},E=function(t,n,r){var e=n/8|0;t[e]|=r<<=7&n,t[e+1]|=r>>8,t[e+2]|=r>>16},Z=function(t,e){for(var i=[],o=0;o<t.length;++o)t[o]&&i.push({s:o,f:t[o]});var s=i.length,a=i.slice();if(!s)return{t:N,l:0};if(1==s){var u=new n(i[0].s+1);return u[i[0].s]=1,{t:u,l:1}}i.sort((function(t,n){return t.f-n.f})),i.push({s:-1,f:25001});var h=i[0],f=i[1],l=0,c=1,p=2;for(i[0]={s:-1,f:h.f+f.f,l:h,r:f};c!=s-1;)h=i[i[l].f<i[p].f?l++:p++],f=i[l!=c&&i[l].f<i[p].f?l++:p++],i[c++]={s:-1,f:h.f+f.f,l:h,r:f};var v=a[0].s;for(o=1;o<s;++o)a[o].s>v&&(v=a[o].s);var d=new r(v+1),g=q(i[c-1],d,0);if(g>e){o=0;var y=0,m=g-e,b=1<<m;for(a.sort((function(t,n){return d[n.s]-d[t.s]||t.f-n.f}));o<s;++o){var w=a[o].s;if(!(d[w]>e))break;y+=b-(1<<g-d[w]),d[w]=e}for(y>>=m;y>0;){var x=a[o].s;d[x]<e?y-=1<<e-d[x]++-1:++o}for(;o>=0&&y;--o){var z=a[o].s;d[z]==e&&(--d[z],++y)}g=e}return{t:new n(d),l:g}},q=function(t,n,r){return-1==t.s?Math.max(q(t.l,n,r+1),q(t.r,n,r+1)):n[t.s]=r},O=function(t){for(var n=t.length;n&&!t[--n];);for(var e=new r(++n),i=0,o=t[0],s=1,a=function(t){e[i++]=t},u=1;u<=n;++u)if(t[u]==o&&u!=n)++s;else{if(!o&&s>2){for(;s>138;s-=138)a(32754);s>2&&(a(s>10?s-11<<5|28690:s-3<<5|12305),s=0)}else if(s>3){for(a(o),--s;s>6;s-=6)a(8304);s>2&&(a(s-3<<5|8208),s=0)}for(;s--;)a(o);s=1,o=t[u]}return{c:e.subarray(0,i),n:n}},G=function(t,n){for(var r=0,e=0;e<n.length;++e)r+=t[e]*n[e];return r},L=function(t,n,r){var e=r.length,i=T(n+2);t[i]=255&e,t[i+1]=e>>8,t[i+2]=255^t[i],t[i+3]=255^t[i+1];for(var o=0;o<e;++o)t[i+o+4]=r[o];return 8*(i+4+e)},H=function(t,n,e,a,u,h,f,l,c,p,v){F(n,v++,e),++u[256];for(var d=Z(u,15),g=d.t,x=d.l,k=Z(h,15),M=k.t,S=k.l,A=O(g),T=A.c,D=A.n,C=O(M),I=C.c,U=C.n,q=new r(19),H=0;H<T.length;++H)++q[31&T[H]];for(H=0;H<I.length;++H)++q[31&I[H]];for(var j=Z(q,7),N=j.t,P=j.l,B=19;B>4&&!N[s[B-1]];--B);var Y,J,K,Q,R=p+5<<3,V=G(u,m)+G(h,b)+f,W=G(u,g)+G(h,M)+f+14+3*B+G(q,N)+2*q[16]+3*q[17]+7*q[18];if(c>=0&&R<=V&&R<=W)return L(n,v,t.subarray(c,c+p));if(F(n,v,1+(W<V)),v+=2,W<V){Y=y(g,x,0),J=g,K=y(M,S,0),Q=M;var X=y(N,P,0);for(F(n,v,D-257),F(n,v+5,U-1),F(n,v+10,B-4),v+=14,H=0;H<B;++H)F(n,v+3*H,N[s[H]]);v+=3*B;for(var $=[T,I],_=0;_<2;++_){var tt=$[_];for(H=0;H<tt.length;++H)F(n,v,X[rt=31&tt[H]]),v+=N[rt],rt>15&&(F(n,v,tt[H]>>5&127),v+=tt[H]>>12)}}else Y=w,J=m,K=z,Q=b;for(H=0;H<l;++H){var nt=a[H];if(nt>255){var rt;E(n,v,Y[257+(rt=nt>>18&31)]),v+=J[rt+257],rt>7&&(F(n,v,nt>>23&31),v+=i[rt]);var et=31&nt;E(n,v,K[et]),v+=Q[et],et>3&&(E(n,v,nt>>5&8191),v+=o[et])}else E(n,v,Y[nt]),v+=J[nt]}return E(n,v,Y[256]),v+J[256]},j=new e([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),N=new n(0),P=function(t,s,a,u,h,l){var c=l.z||t.length,v=new n(u+c+5*(1+Math.ceil(c/7e3))+h),d=v.subarray(u,v.length-h),g=l.l,y=7&(l.r||0);if(s){y&&(d[0]=l.r>>3);for(var m=j[s-1],b=m>>13,w=8191&m,x=(1<<a)-1,z=l.p||new r(32768),k=l.h||new r(x+1),M=Math.ceil(a/3),S=2*M,A=function(n){return(t[n]^t[n+1]<<M^t[n+2]<<S)&x},C=new e(25e3),I=new r(288),U=new r(32),F=0,E=0,Z=l.i||0,q=0,O=l.w||0,G=0;Z+2<c;++Z){var N=A(Z),P=32767&Z,B=k[N];if(z[P]=B,k[N]=P,O<=Z){var Y=c-Z;if((F>7e3||q>24576)&&(Y>423||!g)){y=H(t,d,0,C,I,U,E,q,G,Z-G,y),q=F=E=0,G=Z;for(var J=0;J<286;++J)I[J]=0;for(J=0;J<30;++J)U[J]=0}var K=2,Q=0,R=w,V=P-B&32767;if(Y>2&&N==A(Z-V))for(var W=Math.min(b,Y)-1,X=Math.min(32767,Z),$=Math.min(258,Y);V<=X&&--R&&P!=B;){if(t[Z+K]==t[Z+K-V]){for(var _=0;_<$&&t[Z+_]==t[Z+_-V];++_);if(_>K){if(K=_,Q=V,_>W)break;var tt=Math.min(V,_-2),nt=0;for(J=0;J<tt;++J){var rt=Z-V+J&32767,et=rt-z[rt]&32767;et>nt&&(nt=et,B=rt)}}}V+=(P=B)-(B=z[P])&32767}if(Q){C[q++]=268435456|f[K]<<18|p[Q];var it=31&f[K],ot=31&p[Q];E+=i[it]+o[ot],++I[257+it],++U[ot],O=Z+K,++F}else C[q++]=t[Z],++I[t[Z]]}}for(Z=Math.max(Z,O);Z<c;++Z)C[q++]=t[Z],++I[t[Z]];y=H(t,d,g,C,I,U,E,q,G,Z-G,y),g||(l.r=7&y|d[y/8|0]<<3,y-=7,l.h=k,l.p=z,l.i=Z,l.w=O)}else{for(Z=l.w||0;Z<c+g;Z+=65535){var st=Z+65535;st>=c&&(d[y/8|0]=g,st=c),y=L(d,y+1,t.subarray(Z,st))}l.i=c}return D(v,0,u+T(y)+h)},B=function(){for(var t=new Int32Array(256),n=0;n<256;++n){for(var r=n,e=9;--e;)r=(1&r&&-306674912)^r>>>1;t[n]=r}return t}(),Y=function(){var t=-1;return{p:function(n){for(var r=t,e=0;e<n.length;++e)r=B[255&r^n[e]]^r>>>8;t=r},d:function(){return~t}}},J=function(){var t=1,n=0;return{p:function(r){for(var e=t,i=n,o=0|r.length,s=0;s!=o;){for(var a=Math.min(s+2655,o);s<a;++s)i+=e+=r[s];e=(65535&e)+15*(e>>16),i=(65535&i)+15*(i>>16)}t=e,n=i},d:function(){return(255&(t%=65521))<<24|(65280&t)<<8|(255&(n%=65521))<<8|n>>8}}},K=function(t,r,e,i,o){if(!o&&(o={l:1},r.dictionary)){var s=r.dictionary.subarray(-32768),a=new n(s.length+t.length);a.set(s),a.set(t,s.length),t=a,o.w=s.length}return P(t,null==r.level?6:r.level,null==r.mem?o.l?Math.ceil(1.5*Math.max(8,Math.min(13,Math.log(t.length)))):20:12+r.mem,e,i,o)},Q=function(t,n){var r={};for(var e in t)r[e]=t[e];for(var e in n)r[e]=n[e];return r},R=function(t,n,r){for(var e=t(),i=""+t,o=i.slice(i.indexOf("[")+1,i.lastIndexOf("]")).replace(/\s+/g,"").split(","),s=0;s<e.length;++s){var a=e[s],u=o[s];if("function"==typeof a){n+=";"+u+"=";var h=""+a;if(a.prototype)if(-1!=h.indexOf("[native code]")){var f=h.indexOf(" ",8)+1;n+=h.slice(f,h.indexOf("(",f))}else for(var l in n+=h,a.prototype)n+=";"+u+".prototype."+l+"="+a.prototype[l];else n+=h}else r[u]=a}return n},V=[],W=function(t){var n=[];for(var r in t)t[r].buffer&&n.push((t[r]=new t[r].constructor(t[r])).buffer);return n},X=function(n,r,e,i){if(!V[e]){for(var o="",s={},a=n.length-1,u=0;u<a;++u)o=R(n[u],o,s);V[e]={c:R(n[a],o,s),e:s}}var h=Q({},V[e].e);return(0,t.default)(V[e].c+";onmessage=function(e){for(var k in e.data)self[k]=e.data[k];onmessage="+r+"}",e,h,W(h),i)},$=function(){return[n,r,e,i,o,s,h,c,x,k,v,C,y,M,S,A,T,D,I,U,Tt,it,ot]},_=function(){return[n,r,e,i,o,s,f,p,w,m,z,b,v,j,N,y,F,E,Z,q,O,G,L,H,T,D,P,K,kt,it]},tt=function(){return[pt,gt,ct,Y,B]},nt=function(){return[vt,dt]},rt=function(){return[yt,ct,J]},et=function(){return[mt]},it=function(t){return postMessage(t,[t.buffer])},ot=function(t){return t&&{out:t.size&&new n(t.size),dictionary:t.dictionary}},st=function(t,n,r,e,i,o){var s=X(r,e,i,(function(t,n){s.terminate(),o(t,n)}));return s.postMessage([t,n],n.consume?[t.buffer]:[]),function(){s.terminate()}},at=function(t){return t.ondata=function(t,n){return postMessage([t,n],[t.buffer])},function(n){n.data.length?(t.push(n.data[0],n.data[1]),postMessage([n.data[0].length])):t.flush()}},ut=function(t,n,r,e,i,o,s){var a,u=X(t,e,i,(function(t,r){t?(u.terminate(),n.ondata.call(n,t)):Array.isArray(r)?1==r.length?(n.queuedSize-=r[0],n.ondrain&&n.ondrain(r[0])):(r[1]&&u.terminate(),n.ondata.call(n,t,r[0],r[1])):s(r)}));u.postMessage(r),n.queuedSize=0,n.push=function(t,r){n.ondata||I(5),a&&n.ondata(I(4,0,1),null,!!r),n.queuedSize+=t.length,u.postMessage([t,a=r],[t.buffer])},n.terminate=function(){u.terminate()},o&&(n.flush=function(){u.postMessage([])})},ht=function(t,n){return t[n]|t[n+1]<<8},ft=function(t,n){return(t[n]|t[n+1]<<8|t[n+2]<<16|t[n+3]<<24)>>>0},lt=function(t,n){return ft(t,n)+4294967296*ft(t,n+4)},ct=function(t,n,r){for(;r;++n)t[n]=r,r>>>=8},pt=function(t,n){var r=n.filename;if(t[0]=31,t[1]=139,t[2]=8,t[8]=n.level<2?4:9==n.level?2:0,t[9]=3,0!=n.mtime&&ct(t,4,Math.floor(new Date(n.mtime||Date.now())/1e3)),r){t[3]=8;for(var e=0;e<=r.length;++e)t[e+10]=r.charCodeAt(e)}},vt=function(t){31==t[0]&&139==t[1]&&8==t[2]||I(6,"invalid gzip data");var n=t[3],r=10;4&n&&(r+=2+(t[10]|t[11]<<8));for(var e=(n>>3&1)+(n>>4&1);e>0;e-=!t[r++]);return r+(2&n)},dt=function(t){var n=t.length;return(t[n-4]|t[n-3]<<8|t[n-2]<<16|t[n-1]<<24)>>>0},gt=function(t){return 10+(t.filename?t.filename.length+1:0)},yt=function(t,n){var r=n.level,e=0==r?0:r<6?1:9==r?3:2;if(t[0]=120,t[1]=e<<6|(n.dictionary&&32),t[1]|=31-(t[0]<<8|t[1])%31,n.dictionary){var i=J();i.p(n.dictionary),ct(t,2,i.d())}},mt=function(t,n){return(8!=(15&t[0])||t[0]>>4>7||(t[0]<<8|t[1])%31)&&I(6,"invalid zlib data"),(t[1]>>5&1)==+!n&&I(6,"invalid zlib data: "+(32&t[1]?"need":"unexpected")+" dictionary"),2+(t[1]>>3&4)};function bt(t,n){return"function"==typeof t&&(n=t,t={}),this.ondata=n,t}var wt=function(){function t(t,r){if("function"==typeof t&&(r=t,t={}),this.ondata=r,this.o=t||{},this.s={l:0,i:32768,w:32768,z:32768},this.b=new n(98304),this.o.dictionary){var e=this.o.dictionary.subarray(-32768);this.b.set(e,32768-e.length),this.s.i=32768-e.length}}return t.prototype.p=function(t,n){this.ondata(K(t,this.o,0,0,this.s),n)},t.prototype.push=function(t,r){this.ondata||I(5),this.s.l&&I(4);var e=t.length+this.s.z;if(e>this.b.length){if(e>2*this.b.length-32768){var i=new n(-32768&e);i.set(this.b.subarray(0,this.s.z)),this.b=i}var o=this.b.length-this.s.z;this.b.set(t.subarray(0,o),this.s.z),this.s.z=this.b.length,this.p(this.b,!1),this.b.set(this.b.subarray(-32768)),this.b.set(t.subarray(o),32768),this.s.z=t.length-o+32768,this.s.i=32766,this.s.w=32768}else this.b.set(t,this.s.z),this.s.z+=t.length;this.s.l=1&r,(this.s.z>this.s.w+8191||r)&&(this.p(this.b,r||!1),this.s.w=this.s.i,this.s.i-=2)},t.prototype.flush=function(){this.ondata||I(5),this.s.l&&I(4),this.p(this.b,!1),this.s.w=this.s.i,this.s.i-=2},t}();_e.Deflate=wt;var xt=function(){return function(t,n){ut([_,function(){return[at,wt]}],this,bt.call(this,t,n),(function(t){var n=new wt(t.data);onmessage=at(n)}),6,1)}}();function zt(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[_],(function(t){return it(kt(t.data[0],t.data[1]))}),0,r)}function kt(t,n){return K(t,n||{},0,0)}_e.AsyncDeflate=xt,_e.deflate=zt,_e.deflateSync=kt;var Mt=function(){function t(t,r){"function"==typeof t&&(r=t,t={}),this.ondata=r;var e=t&&t.dictionary&&t.dictionary.subarray(-32768);this.s={i:0,b:e?e.length:0},this.o=new n(32768),this.p=new n(0),e&&this.o.set(e)}return t.prototype.e=function(t){if(this.ondata||I(5),this.d&&I(4),this.p.length){if(t.length){var r=new n(this.p.length+t.length);r.set(this.p),r.set(t,this.p.length),this.p=r}}else this.p=t},t.prototype.c=function(t){this.s.i=+(this.d=t||!1);var n=this.s.b,r=U(this.p,this.s,this.o);this.ondata(D(r,n,this.s.b),this.d),this.o=D(r,this.s.b-32768),this.s.b=this.o.length,this.p=D(this.p,this.s.p/8|0),this.s.p&=7},t.prototype.push=function(t,n){this.e(t),this.c(n)},t}();_e.Inflate=Mt;var St=function(){return function(t,n){ut([$,function(){return[at,Mt]}],this,bt.call(this,t,n),(function(t){var n=new Mt(t.data);onmessage=at(n)}),7,0)}}();function At(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[$],(function(t){return it(Tt(t.data[0],ot(t.data[1])))}),1,r)}function Tt(t,n){return U(t,{i:2},n&&n.out,n&&n.dictionary)}_e.AsyncInflate=St,_e.inflate=At,_e.inflateSync=Tt;var Dt=function(){function t(t,n){this.c=Y(),this.l=0,this.v=1,wt.call(this,t,n)}return t.prototype.push=function(t,n){this.c.p(t),this.l+=t.length,wt.prototype.push.call(this,t,n)},t.prototype.p=function(t,n){var r=K(t,this.o,this.v&&gt(this.o),n&&8,this.s);this.v&&(pt(r,this.o),this.v=0),n&&(ct(r,r.length-8,this.c.d()),ct(r,r.length-4,this.l)),this.ondata(r,n)},t.prototype.flush=function(){wt.prototype.flush.call(this)},t}();_e.Gzip=Dt,_e.Compress=Dt;var Ct=function(){return function(t,n){ut([_,tt,function(){return[at,wt,Dt]}],this,bt.call(this,t,n),(function(t){var n=new Dt(t.data);onmessage=at(n)}),8,1)}}();function It(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[_,tt,function(){return[Ut]}],(function(t){return it(Ut(t.data[0],t.data[1]))}),2,r)}function Ut(t,n){n||(n={});var r=Y(),e=t.length;r.p(t);var i=K(t,n,gt(n),8),o=i.length;return pt(i,n),ct(i,o-8,r.d()),ct(i,o-4,e),i}_e.AsyncGzip=Ct,_e.AsyncCompress=Ct,_e.gzip=It,_e.compress=It,_e.gzipSync=Ut,_e.compressSync=Ut;var Ft=function(){function t(t,n){this.v=1,this.r=0,Mt.call(this,t,n)}return t.prototype.push=function(t,r){if(Mt.prototype.e.call(this,t),this.r+=t.length,this.v){var e=this.p.subarray(this.v-1),i=e.length>3?vt(e):4;if(i>e.length){if(!r)return}else this.v>1&&this.onmember&&this.onmember(this.r-e.length);this.p=e.subarray(i),this.v=0}Mt.prototype.c.call(this,r),!this.s.f||this.s.l||r||(this.v=T(this.s.p)+9,this.s={i:0},this.o=new n(0),this.push(new n(0),r))},t}();_e.Gunzip=Ft;var Et=function(){return function(t,n){var r=this;ut([$,nt,function(){return[at,Mt,Ft]}],this,bt.call(this,t,n),(function(t){var n=new Ft(t.data);n.onmember=function(t){return postMessage(t)},onmessage=at(n)}),9,0,(function(t){return r.onmember&&r.onmember(t)}))}}();function Zt(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[$,nt,function(){return[qt]}],(function(t){return it(qt(t.data[0],t.data[1]))}),3,r)}function qt(t,r){var e=vt(t);return e+8>t.length&&I(6,"invalid gzip data"),U(t.subarray(e,-8),{i:2},r&&r.out||new n(dt(t)),r&&r.dictionary)}_e.AsyncGunzip=Et,_e.gunzip=Zt,_e.gunzipSync=qt;var Ot=function(){function t(t,n){this.c=J(),this.v=1,wt.call(this,t,n)}return t.prototype.push=function(t,n){this.c.p(t),wt.prototype.push.call(this,t,n)},t.prototype.p=function(t,n){var r=K(t,this.o,this.v&&(this.o.dictionary?6:2),n&&4,this.s);this.v&&(yt(r,this.o),this.v=0),n&&ct(r,r.length-4,this.c.d()),this.ondata(r,n)},t.prototype.flush=function(){wt.prototype.flush.call(this)},t}();_e.Zlib=Ot;var Gt=function(){return function(t,n){ut([_,rt,function(){return[at,wt,Ot]}],this,bt.call(this,t,n),(function(t){var n=new Ot(t.data);onmessage=at(n)}),10,1)}}();function Lt(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[_,rt,function(){return[Ht]}],(function(t){return it(Ht(t.data[0],t.data[1]))}),4,r)}function Ht(t,n){n||(n={});var r=J();r.p(t);var e=K(t,n,n.dictionary?6:2,4);return yt(e,n),ct(e,e.length-4,r.d()),e}_e.AsyncZlib=Gt,_e.zlib=Lt,_e.zlibSync=Ht;var jt=function(){function t(t,n){Mt.call(this,t,n),this.v=t&&t.dictionary?2:1}return t.prototype.push=function(t,n){if(Mt.prototype.e.call(this,t),this.v){if(this.p.length<6&&!n)return;this.p=this.p.subarray(mt(this.p,this.v-1)),this.v=0}n&&(this.p.length<4&&I(6,"invalid zlib data"),this.p=this.p.subarray(0,-4)),Mt.prototype.c.call(this,n)},t}();_e.Unzlib=jt;var Nt=function(){return function(t,n){ut([$,et,function(){return[at,Mt,jt]}],this,bt.call(this,t,n),(function(t){var n=new jt(t.data);onmessage=at(n)}),11,0)}}();function Pt(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),st(t,n,[$,et,function(){return[Bt]}],(function(t){return it(Bt(t.data[0],ot(t.data[1])))}),5,r)}function Bt(t,n){return U(t.subarray(mt(t,n&&n.dictionary),-4),{i:2},n&&n.out,n&&n.dictionary)}_e.AsyncUnzlib=Nt,_e.unzlib=Pt,_e.unzlibSync=Bt;var Yt=function(){function t(t,n){this.o=bt.call(this,t,n)||{},this.G=Ft,this.I=Mt,this.Z=jt}return t.prototype.i=function(){var t=this;this.s.ondata=function(n,r){t.ondata(n,r)}},t.prototype.push=function(t,r){if(this.ondata||I(5),this.s)this.s.push(t,r);else{if(this.p&&this.p.length){var e=new n(this.p.length+t.length);e.set(this.p),e.set(t,this.p.length)}else this.p=t;this.p.length>2&&(this.s=31==this.p[0]&&139==this.p[1]&&8==this.p[2]?new this.G(this.o):8!=(15&this.p[0])||this.p[0]>>4>7||(this.p[0]<<8|this.p[1])%31?new this.I(this.o):new this.Z(this.o),this.i(),this.s.push(this.p,r),this.p=null)}},t}();_e.Decompress=Yt;var Jt=function(){function t(t,n){Yt.call(this,t,n),this.queuedSize=0,this.G=Et,this.I=St,this.Z=Nt}return t.prototype.i=function(){var t=this;this.s.ondata=function(n,r,e){t.ondata(n,r,e)},this.s.ondrain=function(n){t.queuedSize-=n,t.ondrain&&t.ondrain(n)}},t.prototype.push=function(t,n){this.queuedSize+=t.length,Yt.prototype.push.call(this,t,n)},t}();function Kt(t,n,r){return r||(r=n,n={}),"function"!=typeof r&&I(7),31==t[0]&&139==t[1]&&8==t[2]?Zt(t,n,r):8!=(15&t[0])||t[0]>>4>7||(t[0]<<8|t[1])%31?At(t,n,r):Pt(t,n,r)}function Qt(t,n){return 31==t[0]&&139==t[1]&&8==t[2]?qt(t,n):8!=(15&t[0])||t[0]>>4>7||(t[0]<<8|t[1])%31?Tt(t,n):Bt(t,n)}_e.AsyncDecompress=Jt,_e.decompress=Kt,_e.decompressSync=Qt;var Rt=function(t,r,e,i){for(var o in t){var s=t[o],a=r+o,u=i;Array.isArray(s)&&(u=Q(i,s[1]),s=s[0]),s instanceof n?e[a]=[s,u]:(e[a+="/"]=[new n(0),u],Rt(s,a,e,i))}},Vt="undefined"!=typeof TextEncoder&&new TextEncoder,Wt="undefined"!=typeof TextDecoder&&new TextDecoder,Xt=0;try{Wt.decode(N,{stream:!0}),Xt=1}catch(t){}var $t=function(t){for(var n="",r=0;;){var e=t[r++],i=(e>127)+(e>223)+(e>239);if(r+i>t.length)return{s:n,r:D(t,r-1)};i?3==i?(e=((15&e)<<18|(63&t[r++])<<12|(63&t[r++])<<6|63&t[r++])-65536,n+=String.fromCharCode(55296|e>>10,56320|1023&e)):n+=String.fromCharCode(1&i?(31&e)<<6|63&t[r++]:(15&e)<<12|(63&t[r++])<<6|63&t[r++]):n+=String.fromCharCode(e)}},_t=function(){function t(t){this.ondata=t,Xt?this.t=new TextDecoder:this.p=N}return t.prototype.push=function(t,r){if(this.ondata||I(5),r=!!r,this.t)return this.ondata(this.t.decode(t,{stream:!0}),r),void(r&&(this.t.decode().length&&I(8),this.t=null));this.p||I(4);var e=new n(this.p.length+t.length);e.set(this.p),e.set(t,this.p.length);var i=$t(e),o=i.s,s=i.r;r?(s.length&&I(8),this.p=null):this.p=s,this.ondata(o,r)},t}();_e.DecodeUTF8=_t;var tn=function(){function t(t){this.ondata=t}return t.prototype.push=function(t,n){this.ondata||I(5),this.d&&I(4),this.ondata(nn(t),this.d=n||!1)},t}();function nn(t,r){if(r){for(var e=new n(t.length),i=0;i<t.length;++i)e[i]=t.charCodeAt(i);return e}if(Vt)return Vt.encode(t);var o=t.length,s=new n(t.length+(t.length>>1)),a=0,u=function(t){s[a++]=t};for(i=0;i<o;++i){if(a+5>s.length){var h=new n(a+8+(o-i<<1));h.set(s),s=h}var f=t.charCodeAt(i);f<128||r?u(f):f<2048?(u(192|f>>6),u(128|63&f)):f>55295&&f<57344?(u(240|(f=65536+(1047552&f)|1023&t.charCodeAt(++i))>>18),u(128|f>>12&63),u(128|f>>6&63),u(128|63&f)):(u(224|f>>12),u(128|f>>6&63),u(128|63&f))}return D(s,0,a)}function rn(t,n){if(n){for(var r="",e=0;e<t.length;e+=16384)r+=String.fromCharCode.apply(null,t.subarray(e,e+16384));return r}if(Wt)return Wt.decode(t);var i=$t(t),o=i.s;return(r=i.r).length&&I(8),o}_e.EncodeUTF8=tn,_e.strToU8=nn,_e.strFromU8=rn;var en=function(t){return 1==t?3:t<6?2:9==t?1:0},on=function(t,n){return n+30+ht(t,n+26)+ht(t,n+28)},sn=function(t,n,r){var e=ht(t,n+28),i=rn(t.subarray(n+46,n+46+e),!(2048&ht(t,n+8))),o=n+46+e,s=ft(t,n+20),a=r&&4294967295==s?an(t,o):[s,ft(t,n+24),ft(t,n+42)],u=a[0],h=a[1],f=a[2];return[ht(t,n+10),u,h,i,o+ht(t,n+30)+ht(t,n+32),f]},an=function(t,n){for(;1!=ht(t,n);n+=4+ht(t,n+2));return[lt(t,n+12),lt(t,n+4),lt(t,n+20)]},un=function(t){var n=0;if(t)for(var r in t){var e=t[r].length;e>65535&&I(9),n+=e+4}return n},hn=function(t,n,r,e,i,o,s,a){var u=e.length,h=r.extra,f=a&&a.length,l=un(h);ct(t,n,null!=s?33639248:67324752),n+=4,null!=s&&(t[n++]=20,t[n++]=r.os),t[n]=20,n+=2,t[n++]=r.flag<<1|(o<0&&8),t[n++]=i&&8,t[n++]=255&r.compression,t[n++]=r.compression>>8;var c=new Date(null==r.mtime?Date.now():r.mtime),p=c.getFullYear()-1980;if((p<0||p>119)&&I(10),ct(t,n,p<<25|c.getMonth()+1<<21|c.getDate()<<16|c.getHours()<<11|c.getMinutes()<<5|c.getSeconds()>>1),n+=4,-1!=o&&(ct(t,n,r.crc),ct(t,n+4,o<0?-o-2:o),ct(t,n+8,r.size)),ct(t,n+12,u),ct(t,n+14,l),n+=16,null!=s&&(ct(t,n,f),ct(t,n+6,r.attrs),ct(t,n+10,s),n+=14),t.set(e,n),n+=u,l)for(var v in h){var d=h[v],g=d.length;ct(t,n,+v),ct(t,n+2,g),t.set(d,n+4),n+=4+g}return f&&(t.set(a,n),n+=f),n},fn=function(t,n,r,e,i){ct(t,n,101010256),ct(t,n+8,r),ct(t,n+10,r),ct(t,n+12,e),ct(t,n+16,i)},ln=function(){function t(t){this.filename=t,this.c=Y(),this.size=0,this.compression=0}return t.prototype.process=function(t,n){this.ondata(null,t,n)},t.prototype.push=function(t,n){this.ondata||I(5),this.c.p(t),this.size+=t.length,n&&(this.crc=this.c.d()),this.process(t,n||!1)},t}();_e.ZipPassThrough=ln;var cn=function(){function t(t,n){var r=this;n||(n={}),ln.call(this,t),this.d=new wt(n,(function(t,n){r.ondata(null,t,n)})),this.compression=8,this.flag=en(n.level)}return t.prototype.process=function(t,n){try{this.d.push(t,n)}catch(t){this.ondata(t,null,n)}},t.prototype.push=function(t,n){ln.prototype.push.call(this,t,n)},t}();_e.ZipDeflate=cn;var pn=function(){function t(t,n){var r=this;n||(n={}),ln.call(this,t),this.d=new xt(n,(function(t,n,e){r.ondata(t,n,e)})),this.compression=8,this.flag=en(n.level),this.terminate=this.d.terminate}return t.prototype.process=function(t,n){this.d.push(t,n)},t.prototype.push=function(t,n){ln.prototype.push.call(this,t,n)},t}();_e.AsyncZipDeflate=pn;var vn=function(){function t(t){this.ondata=t,this.u=[],this.d=1}return t.prototype.add=function(t){var r=this;if(this.ondata||I(5),2&this.d)this.ondata(I(4+8*(1&this.d),0,1),null,!1);else{var e=nn(t.filename),i=e.length,o=t.comment,s=o&&nn(o),a=i!=t.filename.length||s&&o.length!=s.length,u=i+un(t.extra)+30;i>65535&&this.ondata(I(11,0,1),null,!1);var h=new n(u);hn(h,0,t,e,a,-1);var f=[h],l=function(){for(var t=0,n=f;t<n.length;t++)r.ondata(null,n[t],!1);f=[]},c=this.d;this.d=0;var p=this.u.length,v=Q(t,{f:e,u:a,o:s,t:function(){t.terminate&&t.terminate()},r:function(){if(l(),c){var t=r.u[p+1];t?t.r():r.d=1}c=1}}),d=0;t.ondata=function(e,i,o){if(e)r.ondata(e,i,o),r.terminate();else if(d+=i.length,f.push(i),o){var s=new n(16);ct(s,0,134695760),ct(s,4,t.crc),ct(s,8,d),ct(s,12,t.size),f.push(s),v.c=d,v.b=u+d+16,v.crc=t.crc,v.size=t.size,c&&v.r(),c=1}else c&&l()},this.u.push(v)}},t.prototype.end=function(){var t=this;2&this.d?this.ondata(I(4+8*(1&this.d),0,1),null,!0):(this.d?this.e():this.u.push({r:function(){1&t.d&&(t.u.splice(-1,1),t.e())},t:function(){}}),this.d=3)},t.prototype.e=function(){for(var t=0,r=0,e=0,i=0,o=this.u;i<o.length;i++)e+=46+(h=o[i]).f.length+un(h.extra)+(h.o?h.o.length:0);for(var s=new n(e+22),a=0,u=this.u;a<u.length;a++){var h;hn(s,t,h=u[a],h.f,h.u,-h.c-2,r,h.o),t+=46+h.f.length+un(h.extra)+(h.o?h.o.length:0),r+=h.b}fn(s,t,this.u.length,e,r),this.ondata(null,s,!0),this.d=2},t.prototype.terminate=function(){for(var t=0,n=this.u;t<n.length;t++)n[t].t();this.d=2},t}();function dn(t,r,e){e||(e=r,r={}),"function"!=typeof e&&I(7);var i={};Rt(t,"",i,r);var o=Object.keys(i),s=o.length,a=0,u=0,h=s,f=Array(s),l=[],c=function(){for(var t=0;t<l.length;++t)l[t]()},p=function(t,n){xn((function(){e(t,n)}))};xn((function(){p=e}));var v=function(){var t=new n(u+22),r=a,e=u-a;u=0;for(var i=0;i<h;++i){var o=f[i];try{var s=o.c.length;hn(t,u,o,o.f,o.u,s);var l=30+o.f.length+un(o.extra),c=u+l;t.set(o.c,c),hn(t,a,o,o.f,o.u,s,u,o.m),a+=16+l+(o.m?o.m.length:0),u=c+s}catch(t){return p(t,null)}}fn(t,a,f.length,e,r),p(null,t)};s||v();for(var d=function(t){var n=o[t],r=i[n],e=r[0],h=r[1],d=Y(),g=e.length;d.p(e);var y=nn(n),m=y.length,b=h.comment,w=b&&nn(b),x=w&&w.length,z=un(h.extra),k=0==h.level?0:8,M=function(r,e){if(r)c(),p(r,null);else{var i=e.length;f[t]=Q(h,{size:g,crc:d.d(),c:e,f:y,m:w,u:m!=n.length||w&&b.length!=x,compression:k}),a+=30+m+z+i,u+=76+2*(m+z)+(x||0)+i,--s||v()}};if(m>65535&&M(I(11,0,1),null),k)if(g<16e4)try{M(null,kt(e,h))}catch(t){M(t,null)}else l.push(zt(e,h,M));else M(null,e)},g=0;g<h;++g)d(g);return c}function gn(t,r){r||(r={});var e={},i=[];Rt(t,"",e,r);var o=0,s=0;for(var a in e){var u=e[a],h=u[0],f=u[1],l=0==f.level?0:8,c=(M=nn(a)).length,p=f.comment,v=p&&nn(p),d=v&&v.length,g=un(f.extra);c>65535&&I(11);var y=l?kt(h,f):h,m=y.length,b=Y();b.p(h),i.push(Q(f,{size:h.length,crc:b.d(),c:y,f:M,m:v,u:c!=a.length||v&&p.length!=d,o:o,compression:l})),o+=30+c+g+m,s+=76+2*(c+g)+(d||0)+m}for(var w=new n(s+22),x=o,z=s-o,k=0;k<i.length;++k){var M;hn(w,(M=i[k]).o,M,M.f,M.u,M.c.length);var S=30+M.f.length+un(M.extra);w.set(M.c,M.o+S),hn(w,o,M,M.f,M.u,M.c.length,M.o,M.m),o+=16+S+(M.m?M.m.length:0)}return fn(w,o,i.length,z,x),w}_e.Zip=vn,_e.zip=dn,_e.zipSync=gn;var yn=function(){function t(){}return t.prototype.push=function(t,n){this.ondata(null,t,n)},t.compression=0,t}();_e.UnzipPassThrough=yn;var mn=function(){function t(){var t=this;this.i=new Mt((function(n,r){t.ondata(null,n,r)}))}return t.prototype.push=function(t,n){try{this.i.push(t,n)}catch(t){this.ondata(t,null,n)}},t.compression=8,t}();_e.UnzipInflate=mn;var bn=function(){function t(t,n){var r=this;n<32e4?this.i=new Mt((function(t,n){r.ondata(null,t,n)})):(this.i=new St((function(t,n,e){r.ondata(t,n,e)})),this.terminate=this.i.terminate)}return t.prototype.push=function(t,n){this.i.terminate&&(t=D(t,0)),this.i.push(t,n)},t.compression=8,t}();_e.AsyncUnzipInflate=bn;var wn=function(){function t(t){this.onfile=t,this.k=[],this.o={0:yn},this.p=N}return t.prototype.push=function(t,r){var e=this;if(this.onfile||I(5),this.p||I(4),this.c>0){var i=Math.min(this.c,t.length),o=t.subarray(0,i);if(this.c-=i,this.d?this.d.push(o,!this.c):this.k[0].push(o),(t=t.subarray(i)).length)return this.push(t,r)}else{var s=0,a=0,u=void 0,h=void 0;this.p.length?t.length?((h=new n(this.p.length+t.length)).set(this.p),h.set(t,this.p.length)):h=this.p:h=t;for(var f=h.length,l=this.c,c=l&&this.d,p=function(){var t,n=ft(h,a);if(67324752==n){s=1,u=a,v.d=null,v.c=0;var r=ht(h,a+6),i=ht(h,a+8),o=2048&r,c=8&r,p=ht(h,a+26),d=ht(h,a+28);if(f>a+30+p+d){var g=[];v.k.unshift(g),s=2;var y,m=ft(h,a+18),b=ft(h,a+22),w=rn(h.subarray(a+30,a+=30+p),!o);4294967295==m?(t=c?[-2]:an(h,a),m=t[0],b=t[1]):c&&(m=-1),a+=d,v.c=m;var x={name:w,compression:i,start:function(){if(x.ondata||I(5),m){var t=e.o[i];t||x.ondata(I(14,"unknown compression type "+i,1),null,!1),(y=m<0?new t(w):new t(w,m,b)).ondata=function(t,n,r){x.ondata(t,n,r)};for(var n=0,r=g;n<r.length;n++)y.push(r[n],!1);e.k[0]==g&&e.c?e.d=y:y.push(N,!0)}else x.ondata(null,N,!0)},terminate:function(){y&&y.terminate&&y.terminate()}};m>=0&&(x.size=m,x.originalSize=b),v.onfile(x)}return"break"}if(l){if(134695760==n)return u=a+=12+(-2==l&&8),s=3,v.c=0,"break";if(33639248==n)return u=a-=4,s=3,v.c=0,"break"}},v=this;a<f-4&&"break"!==p();++a);if(this.p=N,l<0){var d=h.subarray(0,s?u-12-(-2==l&&8)-(134695760==ft(h,u-16)&&4):a);c?c.push(d,!!s):this.k[+(2==s)].push(d)}if(2&s)return this.push(h.subarray(a),r);this.p=h.subarray(a)}r&&(this.c&&I(13),this.p=null)},t.prototype.register=function(t){this.o[t.compression]=t},t}();_e.Unzip=wn;var xn="function"==typeof queueMicrotask?queueMicrotask:"function"==typeof setTimeout?setTimeout:function(t){t()};function zn(t,r,e){e||(e=r,r={}),"function"!=typeof e&&I(7);var i=[],o=function(){for(var t=0;t<i.length;++t)i[t]()},s={},a=function(t,n){xn((function(){e(t,n)}))};xn((function(){a=e}));for(var u=t.length-22;101010256!=ft(t,u);--u)if(!u||t.length-u>65558)return a(I(13,0,1),null),o;var h=ht(t,u+8);if(h){var f=h,l=ft(t,u+16),c=4294967295==l||65535==f;if(c){var p=ft(t,u-12);(c=101075792==ft(t,p))&&(f=h=ft(t,p+32),l=ft(t,p+48))}for(var v=r&&r.filter,d=function(r){var e=sn(t,l,c),u=e[0],f=e[1],p=e[2],d=e[3],g=e[4],y=on(t,e[5]);l=g;var m=function(t,n){t?(o(),a(t,null)):(n&&(s[d]=n),--h||a(null,s))};if(!v||v({name:d,size:f,originalSize:p,compression:u}))if(u)if(8==u){var b=t.subarray(y,y+f);if(p<524288||f>.8*p)try{m(null,Tt(b,{out:new n(p)}))}catch(t){m(t,null)}else i.push(At(b,{size:p},m))}else m(I(14,"unknown compression type "+u,1),null);else m(null,D(t,y,y+f));else m(null,null)},g=0;g<f;++g)d()}else a(null,{});return o}function kn(t,r){for(var e={},i=t.length-22;101010256!=ft(t,i);--i)(!i||t.length-i>65558)&&I(13);var o=ht(t,i+8);if(!o)return{};var s=ft(t,i+16),a=4294967295==s||65535==o;if(a){var u=ft(t,i-12);(a=101075792==ft(t,u))&&(o=ft(t,u+32),s=ft(t,u+48))}for(var h=r&&r.filter,f=0;f<o;++f){var l=sn(t,s,a),c=l[0],p=l[1],v=l[2],d=l[3],g=l[4],y=on(t,l[5]);s=g,h&&!h({name:d,size:p,originalSize:v,compression:c})||(c?8==c?e[d]=Tt(t.subarray(y,y+p),{out:new n(v)}):I(14,"unknown compression type "+c):e[d]=D(t,y,y+p))}return e}_e.unzip=zn,_e.unzipSync=kn;return _e});
+</script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   EXPORTADOR CYT
+   Lee archivos .cyt de Infinicyt y exporta poblaciones a FCS 3.1.
+   Todo el procesamiento es local: los datos no salen del equipo.
+
+   Vive en su propio script (antes del principal) y sólo expone renderCyt()
+   y el objeto CY. Usa S.cyt para lo que se recuerda entre sesiones (paneles
+   abiertos y preferencias de exportación); el último .cyt abierto va en
+   IndexedDB y el estado de cada archivo (selección, referencia…) en
+   localStorage, porque pueden ser grandes.
+   ════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+const VERSION="1.1";
+const $=id=>document.getElementById('cy-'+id);
+
+/* ---------- estado ---------- */
+const Y={
+  file:null, cytName:"", base:"", profile:"", fcs:null, F:null, N:0, P:0, meta:{},
+  pop:null, nan:null, nanCount:0,
+  root:null, byId:new Map(), order:[], maxId:0,
+  directAll:new Map(), directValid:new Map(),
+  refId:null, epulFile:null, epul:null, numOv:new Map(),
+  expanded:new Set(), selected:new Set(), overrides:new Map(), labels:new Map(),
+  params:[], parSel:new Set(), search:"", persistNote:""
+};
+let restoreTried=false;
+
+/* Preferencias de exportación y paneles abiertos (viajan con S). */
+const PF_DEF={tpl:"{muestra}_{poblacion}",dateFmt:"ymd",mode:"each",maxEv:"",sampling:"random",seed:"12345",addPop:null,hideEmpty:true,numLens:[5,6]};
+function cfg(){ if(!S.cyt||typeof S.cyt!=='object') S.cyt={}; if(!S.cyt.prefs||typeof S.cyt.prefs!=='object') S.cyt.prefs={}; if(!S.cyt.open||typeof S.cyt.open!=='object') S.cyt.open={}; return S.cyt; }
+function pf(){
+  const p=cfg().prefs;
+  for(const k in PF_DEF) if(!(k in p)) p[k]=Array.isArray(PF_DEF[k])?PF_DEF[k].slice():PF_DEF[k];
+  p.numLens=(Array.isArray(p.numLens)?p.numLens:[]).filter(n=>Number.isInteger(n)&&n>0&&n<=12);
+  return p;
+}
+function savePrefs(){ saveLocalSoon(); }
+const mode=()=>pf().mode==="joint"?"joint":"each";
+const addPopOn=()=>{ const v=pf().addPop; return v!=null ? !!v : mode()==="joint"; };
+
+/* ---------- utilidades ---------- */
+const nfInt=new Intl.NumberFormat("es-ES");
+const fmtInt=n=>nfInt.format(n);
+function fmtPct(v){
+  if(!isFinite(v)) return "—";
+  if(v===0) return "0";
+  if(v>=1) return v.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v.toLocaleString("es-ES",{maximumSignificantDigits:3});
+}
+function fmtAbs(v){
+  if(!isFinite(v)) return "—";
+  if(v===0) return "0";
+  if(v>=0.01) return v.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v.toLocaleString("es-ES",{maximumSignificantDigits:3});
+}
+function fmtMB(b){ return b>=1e9 ? (b/1e9).toLocaleString("es-ES",{maximumFractionDigits:2})+" GB" : (b/1e6).toLocaleString("es-ES",{maximumFractionDigits:1})+" MB"; }
+const tick=()=>new Promise(r=>setTimeout(r,16));
+const inCyt=()=>typeof V!=='undefined'&&V.area==='cyt';
+
+/* Pantalla de espera con barra de progreso. */
+function busy(on,title,sub,frac){
+  let el=document.getElementById('cy-busy');
+  if(!el){
+    el=document.createElement('div'); el.id='cy-busy'; el.className='cy-busy';
+    el.innerHTML='<div class="cy-busy-box" role="status" aria-live="polite"><div class="cy-busy-t"><span class="cy-spin"></span><b id="cy-busyT">Procesando…</b></div><div class="cy-note" id="cy-busyS"></div><div class="cy-bar"><i id="cy-busyBar"></i></div></div>';
+    document.body.appendChild(el);
+  }
+  el.classList.toggle('on',!!on);
+  if(title!=null) document.getElementById('cy-busyT').textContent=title;
+  document.getElementById('cy-busyS').textContent=sub||"";
+  document.getElementById('cy-busyBar').style.width = frac==null ? "0" : Math.round(frac*100)+"%";
+}
+function latin1(u8){ let s=""; for(let i=0;i<u8.length;i+=8192) s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192)); return s; }
+function decodeText(u8){ try{ return new TextDecoder("utf-8",{fatal:true}).decode(u8); }catch(e){ return latin1(u8); } }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---------- persistencia ----------
+   · el último .cyt abierto se guarda en IndexedDB (se reabre al volver)
+   · el estado de cada archivo va en localStorage (se conservan los últimos 15) */
+const DB={
+  open(){ return new Promise((res,rej)=>{ const r=indexedDB.open("cyt-exporter",1); r.onupgradeneeded=()=>r.result.createObjectStore("files"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); },
+  async tx(mode,fn){ const db=await this.open(); return new Promise((res,rej)=>{ const t=db.transaction("files",mode); const st=t.objectStore("files"); let out; const r=fn(st); if(r){ r.onsuccess=()=>{ out=r.result; }; } t.oncomplete=()=>{ db.close(); res(out); }; t.onerror=()=>{ db.close(); rej(t.error); }; t.onabort=()=>{ db.close(); rej(t.error); }; }); },
+  put(k,v){ return this.tx("readwrite",st=>st.put(v,k)); },
+  get(k){ return this.tx("readonly",st=>st.get(k)); },
+  del(k){ return this.tx("readwrite",st=>st.delete(k)); }
+};
+const LS={
+  get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const fileKey=()=>"cytexp-state:"+Y.cytName+"|"+(Y.file?Y.file.size:0);
+let saveT=null;
+function saveState(){
+  if(!Y.root) return;
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{
+    if(!Y.root) return;
+    const key=fileKey();
+    LS.set(key,{ selected:[...Y.selected], overrides:[...Y.overrides], labels:[...Y.labels], expanded:[...Y.expanded],
+      refId:Y.refId, epul:Y.epul, parSel:[...Y.parSel], search:Y.search, numOv:[...Y.numOv] });
+    const keys=LS.get("cytexp-keys",[]).filter(k=>k!==key); keys.push(key);
+    while(keys.length>15) LS.del(keys.shift());
+    LS.set("cytexp-keys",keys);
+  },250);
+}
+
+/* ---------- lectura FCS ---------- */
+function parseFCS(u8){
+  const hdr=latin1(u8.subarray(0,58));
+  if(!/^FCS\d\.\d/.test(hdr)) throw new Error("data.fcs no tiene cabecera FCS válida.");
+  const ts=parseInt(hdr.slice(10,18)), te=parseInt(hdr.slice(18,26));
+  let ds=parseInt(hdr.slice(26,34))||0, de=parseInt(hdr.slice(34,42))||0;
+  const text=decodeText(u8.subarray(ts,te+1));
+  const d=text[0], kw=[];
+  let cur="", key=null;
+  for(let i=1;i<text.length;i++){
+    const c=text[i];
+    if(c===d){
+      if(text[i+1]===d && i+1<text.length-1){ cur+=d; i++; continue; }
+      if(key===null){ key=cur; } else { kw.push([key,cur]); key=null; }
+      cur="";
+    } else cur+=c;
+  }
+  if(key!==null && cur!=="") kw.push([key,cur]);
+  const map=new Map(); kw.forEach(([k,v])=>map.set(k.toUpperCase(),v));
+  const g=k=>{const v=map.get(k); return v==null?null:v.trim();};
+  if(g("$BEGINDATA")) ds=parseInt(g("$BEGINDATA"));
+  if(g("$ENDDATA")) de=parseInt(g("$ENDDATA"));
+  const P=parseInt(g("$PAR")), N=parseInt(g("$TOT"));
+  const dt=(g("$DATATYPE")||"F").toUpperCase(), bo=g("$BYTEORD")||"1,2,3,4";
+  const le=bo.startsWith("1");
+  if(g("$MODE") && g("$MODE").toUpperCase()!=="L") throw new Error("Modo FCS no soportado ($MODE="+g("$MODE")+").");
+  const params=[];
+  for(let p=1;p<=P;p++){
+    params.push({ idx:p-1, N:g("$P"+p+"N")||("P"+p), S:g("$P"+p+"S")||"", B:parseInt(g("$P"+p+"B")||"32"), R:g("$P"+p+"R")||"", type:g("$P"+p+"TYPE")||"" });
+  }
+  const F=new Float32Array(N*P);
+  if(dt==="F" && params.every(p=>p.B===32)){
+    const need=N*P*4;
+    if(de-ds+1 < need) throw new Error("El bloque de datos FCS es más corto de lo esperado.");
+    new Uint8Array(F.buffer).set(u8.subarray(ds,ds+need));
+    if(!le){ const v=new DataView(F.buffer); for(let i=0;i<N*P;i++) F[i]=v.getFloat32(i*4,false); }
+  } else {
+    const dv=new DataView(u8.buffer,u8.byteOffset+ds,de-ds+1);
+    let off=0, k=0;
+    for(let e=0;e<N;e++) for(let p=0;p<P;p++){
+      const b=params[p].B;
+      if(dt==="F"){ F[k++]=dv.getFloat32(off,le); off+=4; }
+      else if(dt==="D"){ F[k++]=dv.getFloat64(off,le); off+=8; }
+      else if(dt==="I"){
+        let v = b===8?dv.getUint8(off): b===16?dv.getUint16(off,le): dv.getUint32(off,le);
+        const R=parseFloat(params[p].R); if(R>0 && (R&(R-1))===0) v = v % R;
+        F[k++]=v; off+=b/8;
+      } else throw new Error("$DATATYPE no soportado: "+dt);
+    }
+  }
+  return {kw, map, g, P, N, params, F, version:hdr.slice(0,6)};
+}
+
+/* ---------- árbol (XML) ---------- */
+function childEl(el,tag){ for(const c of el.children) if(c.tagName===tag) return c; return null; }
+function childText(el,tag){ const c=childEl(el,tag); return c?c.textContent:null; }
+function parsePopEl(el,parent,depth){
+  const n={ id:parseInt(childText(el,"id")), name:(childText(el,"name")||"").trim(), color:(childText(el,"color")||"#999999").trim(), parent, depth, children:[] };
+  const subs=childEl(el,"subpopulations");
+  if(subs) for(const c of subs.children) if(c.tagName==="population") n.children.push(parsePopEl(c,n,depth+1));
+  return n;
+}
+
+/* ---------- fechas ---------- */
+const MONTHS={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11,ENE:0,ABR:3,AGO:7,SET:8,DIC:11};
+function parseFcsDate(s){
+  if(!s) return null;
+  let m=s.match(/(\d{1,2})[-\/ ]([A-Za-z]{3})[a-z]*[-\/ ](\d{4})/);
+  if(m && MONTHS[m[2].toUpperCase()]!=null) return new Date(+m[3],MONTHS[m[2].toUpperCase()],+m[1]);
+  m=s.match(/(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  return null;
+}
+function fmtDate(d){
+  if(!d) return "";
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
+  switch(pf().dateFmt){ case "y-m-d": return `${y}-${m}-${dd}`; case "dmy": return `${dd}${m}${y}`; case "d-m-y": return `${dd}-${m}-${y}`; default: return `${y}${m}${dd}`; }
+}
+const fmtDateHuman=d=>d ? d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
+
+/* ---------- carga del .cyt ---------- */
+async function loadCyt(file,{restore=false}={}){
+  try{
+    busy(true,(restore?"Reabriendo ":"Leyendo ")+file.name,"Descomprimiendo…");
+    await tick();
+    const buf=new Uint8Array(await file.arrayBuffer());
+    if(!(buf[0]===0x50 && buf[1]===0x4B)) throw new Error("No parece un archivo .cyt (no es un contenedor ZIP).");
+    const want=new Set(["data.fcs","data.pr","data.prmx","data.infx"]);
+    const z=fflate.unzipSync(buf,{filter:f=>want.has(f.name)});
+    if(!z["data.fcs"]) throw new Error("El archivo no contiene data.fcs.");
+    if(!z["data.pr"]) throw new Error("El archivo no contiene data.pr (asignación de eventos).");
+    busy(true,null,"Leyendo eventos FCS…"); await tick();
+    const fcs=parseFCS(z["data.fcs"]);
+    delete z["data.fcs"];
+
+    busy(true,null,"Leyendo poblaciones…"); await tick();
+    const pr=z["data.pr"];
+    const dv=new DataView(pr.buffer,pr.byteOffset,pr.byteLength);
+    const n=dv.getUint32(2,false);
+    if(n!==fcs.N) throw new Error(`Número de eventos distinto entre data.pr (${n}) y data.fcs (${fcs.N}). Puede tratarse de un archivo fusionado de varios tubos, que aún no está soportado.`);
+    const pop=new Int32Array(n);
+    for(let i=0;i<n;i++) pop[i]=dv.getInt32(6+4*i,false);
+
+    let rootEl=null, epulFile=null, refId=null;
+    if(z["data.prmx"]){
+      const doc=new DOMParser().parseFromString(decodeText(z["data.prmx"]),"application/xml");
+      rootEl=doc.getElementsByTagName("rootPopulation")[0]||null;
+      const ep=doc.getElementsByTagName("eventsPerMicroliter")[0]; if(ep) epulFile=parseFloat(ep.textContent);
+      const rp=doc.getElementsByTagName("referencePopulation")[0]; if(rp) refId=parseInt(rp.textContent);
+    }
+    if(!rootEl){
+      const tail=pr.subarray(6+4*n); const k=latin1(tail).indexOf("<?xml");
+      if(k>=0){ const doc=new DOMParser().parseFromString(decodeText(tail.subarray(k)),"application/xml"); const ro=doc.getElementsByTagName("resultOptions")[0]; rootEl=ro?childEl(ro,"population"):null; }
+    }
+    if(!rootEl) throw new Error("No se encontró el árbol de poblaciones.");
+    const root=parsePopEl(rootEl,null,0);
+
+    // eventos eliminados (todos los valores NaN)
+    const P=fcs.P, F=fcs.F, nan=new Uint8Array(n); let nanCount=0;
+    for(let i=0;i<n;i++){ const b=i*P; for(let p=0;p<P;p++){ if(F[b+p]!==F[b+p]){ nan[i]=1; nanCount++; break; } } }
+
+    const byId=new Map(); let maxId=0;
+    (function walk(nd){ byId.set(nd.id,nd); maxId=Math.max(maxId,nd.id); nd.children.forEach(walk); })(root);
+    const dA=new Map(), dV=new Map();
+    for(let i=0;i<n;i++){ const id=pop[i]; dA.set(id,(dA.get(id)||0)+1); if(!nan[i]) dV.set(id,(dV.get(id)||0)+1); }
+    for(const id of dA.keys()) if(!byId.has(id)){
+      const nd={id,name:`ID ${id} (no definida en el árbol)`,color:"#999999",parent:root,depth:1,children:[]};
+      root.children.push(nd); byId.set(id,nd); maxId=Math.max(maxId,id);
+    }
+    const order=[]; (function walk(nd,d){ nd.depth=d; order.push(nd); nd.children.forEach(c=>walk(c,d+1)); })(root,0);
+
+    let profile="";
+    if(z["data.infx"]){ const m=decodeText(z["data.infx"]).match(/<name>([^<]*)<\/name>/); if(m) profile=m[1].trim(); }
+    const g=fcs.g, base=file.name.replace(/\.cyt$/i,"");
+    const numMatch=base.split(/[_\s]+/).find((t,i)=>i>0 && /^\d{3,}$/.test(t));
+    const meta={
+      muestra: g("TUBENAME") || numMatch || base,
+      archivo: base,
+      perfil: profile,
+      grupo: g("GROUPNAME")||"",
+      proyecto: g("$PROJ")||"",
+      citometro: [g("$CYT"),g("$CYTSN")].filter(Boolean).join(" "),
+      fecha_adq: parseFcsDate(g("$DATE")),
+      hora_adq: g("$BTIM")||"",
+      fecha_analisis: parseFcsDate(g("INFDATE")),
+      numSrc:[base,g("TUBENAME"),g("GROUPNAME"),g("$FIL"),g("$PROJ"),profile].filter(Boolean),
+    };
+
+    Object.assign(Y,{file, cytName:file.name, base, profile, meta, fcs, F, N:n, P, pop, nan, nanCount, root, byId, order, maxId, directAll:dA, directValid:dV, epulFile});
+    Y.refId=(refId!=null && byId.has(refId)) ? refId : root.id;
+    Y.epul=epulFile;
+    Y.selected=new Set(); Y.overrides=new Map(); Y.labels=new Map(); Y.search=""; Y.numOv=new Map();
+    Y.params=fcs.params; Y.parSel=new Set(fcs.params.map(p=>p.idx));
+    computeCounts();
+    Y.expanded=new Set(order.filter(nd=>nd.cV>0).map(nd=>nd.id));
+
+    // estado guardado de este archivo
+    const st=LS.get(fileKey(),null);
+    if(st){
+      const okId=id=>byId.has(id);
+      Y.selected=new Set((st.selected||[]).filter(okId));
+      Y.overrides=new Map((st.overrides||[]).filter(([id])=>okId(id)));
+      Y.labels=new Map((st.labels||[]).filter(([id])=>okId(id)));
+      if(st.expanded) Y.expanded=new Set(st.expanded.filter(okId));
+      if(st.refId!=null && okId(st.refId)) Y.refId=st.refId;
+      if(st.epul!==undefined) Y.epul=st.epul;
+      if(st.parSel) Y.parSel=new Set(st.parSel.filter(i=>i<P));
+      Y.search=st.search||"";
+      Y.numOv=new Map((st.numOv||[]).filter(([L,v])=>Number.isInteger(L)&&/^\d+$/.test(v)));
+    }
+    busy(false);
+    Y.persistNote = restore ? "Reabierto automáticamente." : "Guardando para reabrir al volver…";
+    redraw();
+
+    if(!restore){
+      DB.put("last",{name:file.name,file}).then(()=>{ Y.persistNote="Se reabrirá automáticamente al volver a esta pestaña."; setNote(); })
+        .catch(e=>{ console.warn(e); Y.persistNote="No se ha podido guardar para reabrirlo: habrá que abrirlo de nuevo."; setNote(); });
+    }
+  }catch(err){
+    busy(false); console.error(err);
+    if(restore){ DB.del("last").catch(()=>{}); return; }
+    toast("No se pudo abrir el archivo: "+err.message,{icon:'alert',duration:9000});
+  }
+}
+function setNote(){ const el=$('persist'); if(el) el.textContent=Y.persistNote; }
+function redraw(){ if(inCyt()){ renderMain(); renderSidebar(); } }
+function refreshSide(){ const el=document.getElementById('cySideInfo'); if(el) el.innerHTML=sideInfo(); }
+
+function computeCounts(){
+  (function agg(nd){
+    nd.cA=Y.directAll.get(nd.id)||0; nd.cV=Y.directValid.get(nd.id)||0;
+    for(const c of nd.children){ agg(c); nd.cA+=c.cA; nd.cV+=c.cV; }
+  })(Y.root);
+}
+// Igual que Infinicyt: los recuentos excluyen los eventos eliminados (NaN),
+// pero el denominador de eventos/µL usa todos los eventos de la referencia.
+const shown=nd=>nd.cV;
+const refAbsDen=ref=>ref ? ref.cA : 0;
+function isDesc(nd,anc){ for(let x=nd;x;x=x.parent) if(x===anc) return true; return false; }
+function pathOf(nd){ const a=[]; for(let x=nd;x&&x.parent;x=x.parent) a.unshift(x.name); return a.join(" › "); }
+
+async function closeFile(){
+  try{ await DB.del("last"); }catch(e){}
+  Object.assign(Y,{file:null,fcs:null,F:null,pop:null,nan:null,root:null,byId:new Map(),order:[]});
+  redraw();
+}
+
+/* ---------- vista ---------- */
+const PANELS=[
+  {id:'count', icon:'activity',   title:'Recuento absoluto',        desc:'Población de referencia y eventos por microlitro', open:false},
+  {id:'par',   icon:'layers',     title:'Parámetros',               desc:'Qué canales se incluyen en los archivos exportados', open:false},
+  {id:'modo',  icon:'settings',   title:'Modo y muestreo',          desc:'Un archivo por población o uno conjunto, y máximo de eventos', open:true},
+  {id:'nombre',icon:'edit',       title:'Nombre de los archivos',   desc:'Plantilla, números detectados y formato de fecha', open:false},
+  {id:'sel',   icon:'circle-dot', title:'Poblaciones seleccionadas',desc:'Nombre y límite de eventos de cada archivo', open:true},
+];
+function panelOpen(p){ const o=cfg().open; return p.id in o ? !!o[p.id] : p.open; }
+function panelBody(id){
+  const p=pf();
+  switch(id){
+    case 'count': return `
+      <div class="cy-f"><label for="cy-refSel">Población de referencia</label><select class="sel" id="cy-refSel"></select></div>
+      <div class="cy-f"><label for="cy-epul">Eventos/µL de la referencia</label><input class="txt-in" id="cy-epul" type="number" min="0" step="any">
+        <div class="cy-note" id="cy-epulNote"></div></div>
+      <div class="cy-note" id="cy-nanNote"></div>`;
+    case 'par': return `
+      <div class="cy-btnrow">
+        <button class="btn btn-g sm" data-a="parAll">Todos</button>
+        <button class="btn btn-g sm" data-a="parFluo" title="Solo fluorescencias (sin Time, FSC ni SSC)">Fluorescencias</button>
+        <button class="btn btn-g sm" data-a="parNone">Ninguno</button>
+      </div>
+      <div class="cy-plist" id="cy-plist"></div>`;
+    case 'modo': return `
+      <div class="cy-f">
+        <div class="seg cy-seg" role="radiogroup" aria-label="Modo de exportación">
+          <button class="seg-btn" data-a="mode" data-v="each" id="cy-mode-each">Un archivo por población</button>
+          <button class="seg-btn" data-a="mode" data-v="joint" id="cy-mode-joint">Archivo conjunto</button>
+        </div>
+        <div class="cy-note" id="cy-modeNote"></div>
+      </div>
+      <div class="cy-row3">
+        <div class="cy-f"><label for="cy-maxEv" title="Máximo de eventos por población">Máx. eventos</label>
+          <input class="txt-in" id="cy-maxEv" type="number" min="1" step="1" placeholder="Todos" value="${esc(p.maxEv)}"></div>
+        <div class="cy-f"><label for="cy-sampling" title="Qué eventos se toman si la población supera el máximo">Si se supera</label>
+          <select class="sel" id="cy-sampling"><option value="random">Aleatorio</option><option value="first">Primeros</option></select></div>
+        <div class="cy-f" id="cy-seedWrap"><label for="cy-seed">Semilla</label>
+          <input class="txt-in" id="cy-seed" type="number" step="1" value="${esc(p.seed)}"></div>
+      </div>
+      <label class="cfg-row"><div class="cfg-txt"><b>Añadir parámetro «Population»</b><span>Una columna con el nº de población de cada evento.</span></div><input type="checkbox" id="cy-addPop"></label>`;
+    case 'nombre': return `
+      <div class="cy-f"><label for="cy-tpl">Plantilla del nombre</label>
+        <div class="cy-inl">
+          <input class="txt-in cy-mono" id="cy-tpl" spellcheck="false" value="${esc(p.tpl)}">
+          <select class="sel" id="cy-tplPreset" title="Plantillas predefinidas">
+            <option value="">Plantillas…</option>
+            <option value="{muestra}_{poblacion}">Muestra_Población</option>
+            <option value="{fecha_hoy}_{muestra}_{poblacion}">Fecha_Muestra_Población</option>
+            <option value="{fecha_adq}_{muestra}_{poblacion}">FechaAdq_Muestra_Población</option>
+            <option value="{numeros}_{poblacion}">Números_Población</option>
+            <option value="{archivo}_{poblacion}">Archivo_Población</option>
+            <option value="{poblacion}_{muestra}">Población_Muestra</option>
+            <option value="{perfil}_{muestra}_{poblacion}_{eventos}ev">Perfil_Muestra_Población_Nev</option>
+          </select>
+        </div>
+        <div class="cy-tokens" id="cy-tokens"></div>
+      </div>
+      <div class="cy-f"><label>Números detectados (prefijo)</label>
+        <div class="cy-note" style="margin:0 0 4px">Se buscan en el nombre del .cyt y en sus metadatos.</div>
+        <div id="cy-numdet"></div></div>
+      <div class="cy-f"><label for="cy-dateFmt">Formato de fecha</label>
+        <select class="sel" id="cy-dateFmt">
+          <option value="ymd">aaaammdd</option><option value="y-m-d">aaaa-mm-dd</option>
+          <option value="dmy">ddmmaaaa</option><option value="d-m-y">dd-mm-aaaa</option>
+        </select></div>
+      <div class="cy-note" id="cy-namePrev"></div>`;
+    case 'sel': return `
+      <div class="cy-slist" id="cy-slist"></div>
+      <div class="cy-note">El texto de cada fila es el valor de <code>{poblacion}</code> para ese archivo (editable). El número fija su máximo de eventos; vacío = máximo general.</div>`;
+  }
+  return '';
+}
+function panelHTML(pn){
+  const open=panelOpen(pn);
+  const badge = pn.id==='par' ? `<span class="chip" id="cy-parCount"></span>` : pn.id==='sel' ? `<span class="chip" id="cy-selChip"></span>` : '';
+  return `<section class="rp-card cfg-pnl${open?' open':''}" id="cyp-${pn.id}">
+    <button class="cfg-pnl-hd" aria-expanded="${open}" aria-controls="cyb-${pn.id}" data-a="pnl" data-id="${pn.id}">
+      <span class="sec-ico">${ic(pn.icon,19)}</span>
+      <span class="cfg-pnl-tx"><b>${pn.title}</b><span>${pn.desc}</span></span>
+      ${badge}
+      <span class="cfg-pnl-chev">${ic('chevron-down',18)}</span>
+    </button>
+    <div class="cfg-pnl-bd" id="cyb-${pn.id}"><div class="cfg-pnl-in"><div class="cfg-pnl-pad">${panelBody(pn.id)}</div></div></div>
+  </section>`;
+}
+function fileChips(){
+  const g=Y.fcs.g, m=Y.meta;
+  const rows=[
+    ["Muestra",m.muestra], ["Perfil",m.perfil], ["Grupo",m.grupo], ["Citómetro",m.citometro],
+    ["Adquisición",m.fecha_adq?fmtDateHuman(m.fecha_adq)+(m.hora_adq?" "+m.hora_adq.slice(0,5):""):g("$DATE")],
+    ["Análisis",m.fecha_analisis?fmtDateHuman(m.fecha_analisis):""],
+    ["Eventos",fmtInt(Y.N)], ["Parámetros",Y.P],
+  ].filter(r=>r[1]!=null && r[1]!=="");
+  return rows.map(([k,v])=>`<div class="cy-kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")
+    + (Y.nanCount?`<div class="cy-kv warn" title="Eventos sin datos (NaN), eliminados en Infinicyt. Nunca se exportan."><span>Eliminados</span><b>${fmtInt(Y.nanCount)}</b></div>`:"");
+}
+function pageHTML(){
+  const loaded=!!Y.root;
+  const hero=`<div class="hero"><div><div class="eyebrow">Herramientas</div><h1 class="title">Exportador CYT</h1>
+      <p class="sub">Abre un archivo de Infinicyt (.cyt), marca poblaciones y expórtalas a FCS 3.1. Todo se procesa en este equipo.</p></div>
+      ${loaded?`<div class="cy-hero-act"><button class="btn btn-g" data-a="open">${ic('upload',16)} Abrir otro…</button><button class="btn btn-g" data-a="close" title="Cierra el archivo y lo olvida">${ic('x',16)} Cerrar</button></div>`:''}
+    </div>`;
+  if(!loaded) return `<div class="wrap cy" id="cy-root">${hero}
+    <div class="cy-drop" id="cy-drop" data-a="open" tabindex="0" role="button" aria-label="Abrir un archivo .cyt">
+      <div class="cy-drop-ic">${ic('upload',34)}</div>
+      <h3>Arrastra aquí un archivo .cyt de Infinicyt</h3>
+      <p>o haz clic para seleccionarlo</p>
+      <span class="cy-fine">Los datos no salen del equipo. El último archivo abierto se conserva para la próxima vez.</span>
+    </div></div>`;
+  return `<div class="wrap cy" id="cy-root">${hero}
+    <section class="rp-card cy-file">
+      <div class="cy-file-hd"><span class="sec-ico">${ic('file',19)}</span><div class="cy-file-tx"><b>${esc(Y.cytName)}</b><span id="cy-persist">${esc(Y.persistNote)}</span></div></div>
+      <div class="cy-kvs">${fileChips()}</div>
+    </section>
+    <div class="cy-grid">
+      <section class="rp-card cy-tree-card">
+        <div class="cy-tree-hd">
+          <div class="cy-tree-t"><b>Poblaciones</b><span class="chip" id="cy-selCount">0 seleccionadas</span></div>
+          <div class="cy-tools">
+            <input class="srch cy-search" id="cy-search" type="search" placeholder="Buscar población…" value="${esc(Y.search)}" aria-label="Buscar población">
+            <label class="cy-chk"><input type="checkbox" id="cy-hideEmpty"> Ocultar vacías</label>
+          </div>
+          <div class="cy-btnrow">
+            <button class="btn btn-g sm" data-a="expAll">Expandir todo</button>
+            <button class="btn btn-g sm" data-a="colAll">Contraer</button>
+            <button class="btn btn-g sm" data-a="leaves" title="Selecciona las poblaciones finales (sin subpoblaciones con eventos)">Marcar finales</button>
+            <button class="btn btn-g sm" data-a="none">Quitar selección</button>
+            <button class="btn btn-g sm" data-a="csv" title="Tabla de estadísticas en CSV (Excel)">${ic('sheet',14)} Estadísticas CSV</button>
+          </div>
+        </div>
+        <div class="cy-tree-wrap">
+          <table class="cy-tree">
+            <thead><tr><th>Población</th><th>Eventos</th><th title="Eventos por microlitro">Ev/µL</th><th title="% sobre el total de eventos">% total</th><th id="cy-refHead">% ref.</th></tr></thead>
+            <tbody id="cy-tbody"></tbody>
+          </table>
+        </div>
+        <div class="cy-hint"><kbd>Mayús</kbd> + clic en una casilla marca la población con todas sus subpoblaciones. Marcar una población incluye siempre los eventos de sus hijas.</div>
+      </section>
+      <div class="cy-side">
+        <section class="rp-card cy-exp">
+          <div class="cy-sum">
+            <div><b id="cy-sumFiles">0</b><span>archivos</span></div>
+            <div><b id="cy-sumEv">0</b><span>eventos</span></div>
+            <div><b id="cy-sumSize">0 MB</b><span>tamaño aprox.</span></div>
+          </div>
+          <div class="cy-acts">
+            <button class="btn btn-p" id="cy-zip" data-a="zip">${ic('download',16)} <span id="cy-zipT">Descargar</span></button>
+            <button class="btn btn-g" id="cy-dir" data-a="dir" title="Guarda los .fcs directamente en una carpeta">${ic('folder',16)} Guardar en carpeta…</button>
+          </div>
+          <div id="cy-msg"></div>
+        </section>
+        <div class="cfg-pnls">${PANELS.map(panelHTML).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Punto de entrada desde renderMain(). */
+function renderCyt(c){
+  c.innerHTML=pageHTML();
+  const root=document.getElementById('cy-root');
+  root.addEventListener('click',onClick);
+  root.addEventListener('input',onInput);
+  root.addEventListener('change',onChange);
+  root.addEventListener('dblclick',onDbl);
+  root.addEventListener('keydown',onKey);
+  if(Y.root) initUI(); else ensureRestored();
+}
+async function ensureRestored(){
+  if(restoreTried) return; restoreTried=true;
+  try{
+    const last=await DB.get("last");
+    if(last && last.file){
+      const f=last.file instanceof File ? last.file : new File([last.file], last.name||"archivo.cyt");
+      await loadCyt(f,{restore:true});
+    }
+  }catch(e){ console.warn("No se pudo reabrir el último archivo",e); }
+}
+
+function initUI(){
+  const p=pf();
+  $('hideEmpty').checked=p.hideEmpty!==false;
+  $('epul').value=Y.epul ?? "";
+  $('epulNote').textContent = Y.epulFile!=null ? `Valor guardado en el .cyt: ${fmtAbs(Y.epulFile)}.` : "El archivo no trae valor: introduce el recuento de la referencia.";
+  $('nanNote').textContent = Y.nanCount ? `${fmtInt(Y.nanCount)} eventos eliminados (NaN): no cuentan en los recuentos ni se exportan, pero sí en el denominador de eventos/µL, como en Infinicyt.` : "";
+  $('sampling').value=p.sampling; $('dateFmt').value=p.dateFmt; $('addPop').checked=addPopOn();
+  if(!window.showDirectoryPicker) $('dir').title="Esta ventana no permite guardar en carpeta; usa Descargar";
+  fillRefSelect(); renderParams(); renderTokens(); renderNumDet(); renderTree(); renderSel();
+}
+
+function fillRefSelect(){
+  $('refSel').innerHTML=Y.order.filter(nd=>nd.cA>0||nd.id===Y.refId).map(nd=>`<option value="${nd.id}" ${nd.id===Y.refId?"selected":""}>${"  ".repeat(nd.depth)}${esc(nd.name)}</option>`).join("");
+  const r=Y.byId.get(Y.refId); $('refHead').title="% sobre "+(r?r.name:"la referencia");
+}
+
+function matches(nd){ return !Y.search || nd.name.toLowerCase().includes(Y.search); }
+function subtreeMatch(nd){ return matches(nd) || nd.children.some(subtreeMatch); }
+function hl(name){
+  if(!Y.search) return esc(name);
+  const i=name.toLowerCase().indexOf(Y.search); if(i<0) return esc(name);
+  return esc(name.slice(0,i))+`<mark class="cy-mark">${esc(name.slice(i,i+Y.search.length))}</mark>`+esc(name.slice(i+Y.search.length));
+}
+
+function renderTree(){
+  const hide=pf().hideEmpty!==false, ref=Y.byId.get(Y.refId), refC=ref?shown(ref):0, refD=refAbsDen(ref), tot=shown(Y.root);
+  const epul=parseFloat(Y.epul);
+  const rows=[];
+  const chev=`<svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1.5 6.5 5 3 8.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
+  (function walk(nd){
+    const c=shown(nd);
+    if(hide && c===0 && nd!==Y.root) return;
+    if(Y.search && !subtreeMatch(nd)) return;
+    const kids=nd.children.filter(k=>!(hide&&shown(k)===0) && (!Y.search||subtreeMatch(k)));
+    const open=Y.search ? true : Y.expanded.has(nd.id);
+    const inRef=ref && isDesc(nd,ref);
+    const abs=(refD>0 && isFinite(epul)) ? c/refD*epul : NaN;
+    const sel=Y.selected.has(nd.id);
+    rows.push(`<tr data-id="${nd.id}" class="${sel?"cy-on":""} ${nd===ref?"cy-ref":""}">
+      <td><div class="cy-cell" style="padding-left:${nd.depth*14}px">
+        <button class="cy-tw ${kids.length?"":"none"} ${open?"open":""}" data-act="tw" aria-label="Expandir" tabindex="${kids.length?0:-1}">${chev}</button>
+        <input type="checkbox" data-act="sel" ${sel?"checked":""} aria-label="Seleccionar ${esc(nd.name)}">
+        <span class="cy-dot" style="background:${esc(nd.color)}"></span>
+        <span class="cy-nm">${hl(nd.name)}</span>${nd===ref?'<span class="cy-tag">REF</span>':""}
+      </div></td>
+      <td>${fmtInt(c)}</td>
+      <td>${fmtAbs(abs)}</td>
+      <td>${fmtPct(tot?c/tot*100:NaN)}</td>
+      <td>${inRef&&refC?fmtPct(c/refC*100):'<span class="cy-mut">—</span>'}</td>
+    </tr>`);
+    if(open) kids.forEach(walk);
+  })(Y.root);
+  $('tbody').innerHTML=rows.join("");
+  $('selCount').textContent = Y.selected.size===1 ? "1 seleccionada" : `${Y.selected.size} seleccionadas`;
+  saveState();
+}
+
+function renderParams(){
+  $('plist').innerHTML=Y.params.map(p=>`<label class="cy-prow"><input type="checkbox" data-p="${p.idx}" ${Y.parSel.has(p.idx)?"checked":""}>
+     <span>${esc(p.S||p.N)}</span><span class="cy-ch">${esc(p.S?p.N:"")}</span></label>`).join("");
+  $('parCount').textContent=`${Y.parSel.size}/${Y.params.length}`;
+}
+
+/* ---------- plantilla de nombre ---------- */
+const TOKENS=[
+  ["poblacion","Población (sufijo editable de cada fila)"],
+  ["muestra","Nº de muestra (TUBENAME)"],
+  ["fecha_hoy","Fecha de exportación"],
+  ["fecha_adq","Fecha de adquisición"],
+  ["fecha_analisis","Fecha de análisis en Infinicyt"],
+  ["hora","Hora de exportación (hhmm)"],
+  ["archivo","Nombre del .cyt"],
+  ["perfil","Perfil de Infinicyt"],
+  ["grupo","Grupo (GROUPNAME)"],
+  ["proyecto","Proyecto ($PROJ)"],
+  ["citometro","Citómetro"],
+  ["eventos","Nº de eventos exportados"],
+  ["orden","Nº de orden de la población (01, 02…)"],
+];
+function tokenValue(k,ctx){
+  const m=Y.meta, now=new Date();
+  switch(k){
+    case "poblacion": return ctx.poblacion;
+    case "muestra": return m.muestra;
+    case "fecha_hoy": return fmtDate(now);
+    case "fecha_adq": return fmtDate(m.fecha_adq);
+    case "fecha_analisis": return fmtDate(m.fecha_analisis);
+    case "hora": return String(now.getHours()).padStart(2,"0")+String(now.getMinutes()).padStart(2,"0");
+    case "archivo": return m.archivo;
+    case "perfil": return m.perfil;
+    case "grupo": return m.grupo;
+    case "proyecto": return m.proyecto;
+    case "citometro": return m.citometro;
+    case "eventos": return ctx.eventos!=null?String(ctx.eventos):"";
+    case "orden": return ctx.orden!=null&&ctx.orden!==""?String(ctx.orden).padStart(2,"0"):"";
+    default:{
+      const mm=/^num(\d+)$/.exec(k); if(mm) return numValue(+mm[1]);
+      if(k==="numeros") return pf().numLens.map(numValue).filter(Boolean).join("_");
+      return null;
+    }
+  }
+}
+/* números de N cifras exactas (ni más ni menos) buscados en el nombre del .cyt y en los metadatos */
+function detectNum(L){
+  const re=new RegExp("(?<!\\d)\\d{"+L+"}(?!\\d)");
+  for(const t of (Y.meta.numSrc||[])){ const m=re.exec(t); if(m) return m[0]; }
+  return "";
+}
+function numValue(L){ return Y.numOv.has(L) ? Y.numOv.get(L) : detectNum(L); }
+function renderNumDet(){
+  if(!Y.root) return;
+  $('numdet').innerHTML=pf().numLens.map(L=>`<div class="cy-numrow"><code>{num${L}}</code>
+      <span class="cy-det" title="Detectado en el nombre del archivo o en sus metadatos">${detectNum(L)?esc(detectNum(L)):'<span class="cy-mut">no detectado</span>'}</span>
+      <input class="txt-in" data-numlen="${L}" inputmode="numeric" maxlength="20" placeholder="manual" value="${esc(Y.numOv.get(L)??"")}" title="Déjalo vacío para usar el valor detectado">
+      <button class="sc-ibtn" data-numrm="${L}" title="Quitar" aria-label="Quitar {num${L}}">${ic('x',14)}</button></div>`).join("")
+    + `<div class="cy-numrow add"><span class="cy-note" style="margin:0">Detectar números de</span>
+      <input class="txt-in" id="cy-numAdd" type="number" min="1" max="12" step="1" placeholder="cifras">
+      <button class="btn btn-g sm" data-a="numadd" type="button">Añadir</button></div>`;
+}
+function renderTokens(){
+  const all=[...TOKENS, ...pf().numLens.map(L=>["num"+L,`Número de ${L} cifras detectado`]), ["numeros","Números detectados, unidos con _"]];
+  $('tokens').innerHTML=all.map(([k,d])=>{
+    const v=tokenValue(k,{poblacion:"",eventos:1000,orden:1});
+    return `<button class="cy-tok" type="button" data-tok="${k}" title="${esc(d)}${v?" → "+esc(v):""}">{${k}}</button>`;
+  }).join("");
+}
+function sanitize(s){ return String(s).replace(/[<>:"/\\|?*\x00-\x1F]+/g,"-").replace(/\s+/g,"_").replace(/_+/g,"_").replace(/^[_. ]+|[_. ]+$/g,"").slice(0,120); }
+function renderName(ctx){
+  const tpl=pf().tpl.trim() || "{muestra}_{poblacion}";
+  let s=tpl.replace(/\{(\w+)\}/g,(m0,k)=>{ const v=tokenValue(k.toLowerCase(),ctx); return v==null?m0:sanitize(v); });
+  s=s.replace(/[<>:"/\\|?*\x00-\x1F{}]+/g,"").replace(/\s+/g,"_").replace(/([_.])\1+/g,"$1").replace(/^[_. ]+|[_. ]+$/g,"");
+  return (s||"export").slice(0,180);
+}
+function dedupe(names){
+  const seen=new Map();
+  return names.map(n=>{ const c=(seen.get(n)||0)+1; seen.set(n,c); return c===1?n:`${n}_${c}`; });
+}
+function autoLabels(nodes){
+  // nombre de la población; si se repite, se antepone el de sus ancestros hasta que sea único
+  const lvl=nodes.map(()=>0);
+  const label=(nd,k)=>{ const a=[]; let x=nd; for(let i=0;i<=k&&x&&x.parent;i++,x=x.parent) a.unshift(x.name); return a.join("_"); };
+  for(let it=0;it<12;it++){
+    const names=nodes.map((n,i)=>label(n,lvl[i])), cnt=new Map();
+    names.forEach(n=>cnt.set(n,(cnt.get(n)||0)+1));
+    let dup=false; names.forEach((n,i)=>{ if(cnt.get(n)>1){ lvl[i]++; dup=true; } });
+    if(!dup) return names.map(n=>sanitize(n)||"poblacion");
+  }
+  return nodes.map((n,i)=>sanitize(label(n,lvl[i])+"_"+n.id));
+}
+function labelsFor(nodes){ const auto=autoLabels(nodes); return nodes.map((nd,i)=>{ const c=Y.labels.get(nd.id); return (c&&sanitize(c))||auto[i]; }); }
+function jointLabel(nodes){ const l=labelsFor(nodes).join("+"); return l.length<=80 ? l : `conjunto_${nodes.length}pob`; }
+function plannedNames(nodes,counts){
+  if(mode()==="joint") return [renderName({poblacion:jointLabel(nodes),eventos:counts.reduce((a,b)=>a+b,0),orden:1})+".fcs"];
+  const l=labelsFor(nodes);
+  return dedupe(nodes.map((nd,i)=>renderName({poblacion:l[i],eventos:counts[i],orden:i+1}))).map(n=>n+".fcs");
+}
+function updatePreview(){
+  if(!Y.root) return;
+  const nodes=selectedNodes(), av=availableCounts(nodes), counts=nodes.map((nd,i)=>Math.min(av[i],limitFor(nd)));
+  const tpl=pf().tpl;
+  let ex=nodes.length ? plannedNames(nodes,counts) : [renderName({poblacion:"Poblacion",eventos:1000,orden:1})+".fcs"];
+  const more=ex.length>2; ex=ex.slice(0,2);
+  let html="Ej.: "+ex.map(e=>`<code>${esc(e)}</code>`).join(" ")+(more?" …":"");
+  const unknown=[...tpl.matchAll(/\{(\w+)\}/g)].map(m=>m[1]).filter(k=>tokenValue(k.toLowerCase(),{})===null);
+  if(unknown.length) html+=`<div class="cy-msg warn">Parámetro desconocido: {${esc(unknown[0])}}</div>`;
+  const miss=[...tpl.matchAll(/\{num(\d+)\}/gi)].map(m=>+m[1]).filter(L=>!numValue(L));
+  if(miss.length) html+=`<div class="cy-msg warn">No se detectó ningún número de ${miss[0]} cifras: escríbelo a mano o quita {num${miss[0]}}.</div>`;
+  else if(/\{numeros\}/i.test(tpl) && !tokenValue("numeros",{})) html+=`<div class="cy-msg warn">No se ha detectado ningún número.</div>`;
+  if(mode()==="each" && nodes.length>1 && !/\{(poblacion|orden)\}/i.test(tpl)) html+=`<div class="cy-msg warn">La plantilla no incluye {poblacion}: los archivos se numerarán _2, _3…</div>`;
+  $('namePrev').innerHTML=html;
+}
+
+/* ---------- selección → lista de exportación ---------- */
+function selectedNodes(){ return Y.order.filter(nd=>Y.selected.has(nd.id)); }
+function globalMax(){ const v=parseInt(pf().maxEv); return v>0?v:Infinity; }
+function limitFor(nd){ const o=Y.overrides.get(nd.id); return o>0?o:globalMax(); }
+function ownerMap(nodes){
+  const idx=new Map(nodes.map((n,i)=>[n.id,i]));
+  const owner=new Int32Array(Y.maxId+1).fill(-1);
+  (function walk(nd,cur){ if(idx.has(nd.id)) cur=idx.get(nd.id); owner[nd.id]=cur; nd.children.forEach(c=>walk(c,cur)); })(Y.root,-1);
+  return owner;
+}
+function availableCounts(nodes){
+  if(mode()==="each") return nodes.map(n=>n.cV);
+  const owner=ownerMap(nodes), out=nodes.map(()=>0);
+  for(const [id,c] of Y.directValid) if(owner[id]>=0) out[owner[id]]+=c;
+  return out;
+}
+function renderSummary(nodes,av){
+  const pOut=Y.parSel.size+(addPopOn()?1:0);
+  const totEv=nodes.reduce((a,nd,i)=>a+Math.min(av[i],limitFor(nd)),0);
+  const files=nodes.length?(mode()==="joint"?1:nodes.length):0;
+  $('sumFiles').textContent=files; $('sumEv').textContent=fmtInt(totEv); $('sumSize').textContent=fmtMB(totEv*pOut*4+files*8000);
+  return {totEv,files};
+}
+function renderSel(){
+  const nodes=selectedNodes(), av=availableCounts(nodes), joint=mode()==="joint", auto=autoLabels(nodes);
+  $('mode-each').classList.toggle('on',!joint); $('mode-joint').classList.toggle('on',joint);
+  $('mode-each').setAttribute('aria-pressed',String(!joint)); $('mode-joint').setAttribute('aria-pressed',String(joint));
+  $('modeNote').textContent = joint
+    ? "Un solo .fcs. Si marcas una población y alguna de sus hijas, cada evento se asigna a la más específica."
+    : "Un .fcs por población; cada uno incluye los eventos de sus subpoblaciones.";
+  $('selChip').textContent=String(nodes.length);
+  $('parCount').textContent=`${Y.parSel.size}/${Y.params.length}`;
+  if(!nodes.length) $('slist').innerHTML='<div class="cy-empty">Marca poblaciones en el árbol</div>';
+  else $('slist').innerHTML=nodes.map((nd,i)=>{
+    const out=Math.min(av[i],limitFor(nd)), o=Y.overrides.get(nd.id);
+    return `<div class="cy-srow" data-id="${nd.id}">
+      <span class="cy-dot" style="background:${esc(nd.color)}"></span>
+      <input class="txt-in cy-lab" data-lab="${nd.id}" value="${esc(Y.labels.get(nd.id)||"")}" placeholder="${esc(auto[i])}" title="${esc(pathOf(nd))}${joint&&av[i]<nd.cV?" (sin los eventos de las subpoblaciones marcadas)":""}" aria-label="Nombre de ${esc(nd.name)}">
+      <span class="cy-avail">${fmtInt(out)}${out<av[i]?` / ${fmtInt(av[i])}`:""}</span>
+      <input class="txt-in cy-ov" type="number" min="1" step="1" data-ov="${nd.id}" value="${o?o:""}" placeholder="${isFinite(globalMax())?fmtInt(globalMax()):"Todos"}" aria-label="Máximo de eventos de ${esc(nd.name)}">
+      <button class="sc-ibtn" data-rm="${nd.id}" title="Quitar" aria-label="Quitar ${esc(nd.name)}">${ic('x',14)}</button>
+    </div>`;}).join("");
+  const {totEv,files}=renderSummary(nodes,av);
+  const ok=nodes.length>0 && Y.parSel.size>0 && totEv>0;
+  $('zip').disabled=!ok; $('dir').disabled=!ok || !window.showDirectoryPicker;
+  $('zipT').textContent = files===1 ? "Descargar .fcs" : "Descargar ZIP";
+  $('seedWrap').style.visibility = pf().sampling==="random" ? "visible":"hidden";
+  $('msg').innerHTML = (!Y.parSel.size && nodes.length) ? '<div class="cy-msg warn">Selecciona al menos un parámetro.</div>' : "";
+  updatePreview(); refreshSide(); saveState();
+}
+
+/* ---------- exportación ---------- */
+function pickEvents(sel,ownerK,owner){
+  const {pop,nan,N}=Y; let n=0;
+  if(owner){ for(let i=0;i<N;i++) if(!nan[i] && owner[pop[i]]===ownerK) n++; }
+  else { for(let i=0;i<N;i++) if(!nan[i] && sel[pop[i]]) n++; }
+  const out=new Int32Array(n); let k=0;
+  if(owner){ for(let i=0;i<N;i++) if(!nan[i] && owner[pop[i]]===ownerK) out[k++]=i; }
+  else { for(let i=0;i<N;i++) if(!nan[i] && sel[pop[i]]) out[k++]=i; }
+  return out;
+}
+function subsample(idx,k,seed){
+  if(k>=idx.length) return idx;
+  if(pf().sampling==="first") return idx.slice(0,k);
+  const a=Int32Array.from(idx), r=mulberry32(seed);
+  for(let i=0;i<k;i++){ const j=i+Math.floor(r()*(a.length-i)); const t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a.slice(0,k).sort();
+}
+function seedFor(nd){ return ((parseInt(pf().seed)||0) ^ Math.imul(nd.id,2654435761))>>>0; }
+
+function parseSpill(v){
+  const t=v.split(",").map(s=>s.trim()); const n=parseInt(t[0]); if(!(n>0) || t.length<1+n+n*n) return null;
+  return {n, names:t.slice(1,1+n), vals:t.slice(1+n,1+n+n*n)};
+}
+function buildFCS({events, pcols, popCol, popLabels, fileName, popDesc}){
+  const src=Y.fcs, P=Y.P, F=Y.F;
+  const Po=pcols.length+(popCol?1:0), nE=events.length;
+  const data=new Float32Array(nE*Po);
+  for(let r=0;r<nE;r++){ const b=events[r]*P, o=r*Po; for(let j=0;j<pcols.length;j++) data[o+j]=F[b+pcols[j]]; if(popCol) data[o+Po-1]=popCol[r]; }
+
+  const drop=/^\$(BEGIN|END)(DATA|ANALYSIS|STEXT)$|^\$(NEXTDATA|PAR|TOT|BYTEORD|DATATYPE|MODE|FIL)$|^\$?SPILL(OVER)?$|^INFINISPILL(_SRC)?$/i;
+  const parRe=/^(\$?)P(\d+)([A-Z_]+)$/i;
+  const general=[], perPar=new Map();
+  for(const [k,v] of src.kw){
+    const m=k.match(parRe);
+    if(m && parseInt(m[2])>=1 && parseInt(m[2])<=P){ const p=parseInt(m[2]); if(!perPar.has(p)) perPar.set(p,[]); perPar.get(p).push([m[1],m[3],v]); continue; }
+    if(drop.test(k)) continue;
+    general.push([k,v]);
+  }
+  const kw=[];
+  kw.push(["$BYTEORD","1,2,3,4"],["$DATATYPE","F"],["$MODE","L"],["$NEXTDATA","0"],["$PAR",String(Po)],["$TOT",String(nE)]);
+  for(const kv of general) kw.push(kv);
+  const keptNames=[];
+  pcols.forEach((pi,j)=>{
+    const n=j+1, list=perPar.get(pi+1)||[];
+    let hasB=false,hasE=false;
+    for(const [dol,suf,v] of list){
+      let val=v; const s=suf.toUpperCase();
+      if(dol && s==="B"){ val="32"; hasB=true; }
+      if(dol && s==="E"){ val="0,0"; hasE=true; }
+      kw.push([dol+"P"+n+suf, val]);
+      if(dol && s==="N") keptNames.push(v.trim());
+    }
+    if(!hasB) kw.push(["$P"+n+"B","32"]);
+    if(!hasE) kw.push(["$P"+n+"E","0,0"]);
+  });
+  if(popCol){
+    const n=Po;
+    kw.push(["$P"+n+"N","Population"],["$P"+n+"S","Poblacion (ver CYTEXP_POPn)"],["$P"+n+"B","32"],["$P"+n+"E","0,0"],["$P"+n+"R",String(popLabels.length+1)],["P"+n+"DISPLAY","LIN"]);
+    popLabels.forEach((l,i)=>kw.push(["CYTEXP_POP"+(i+1),l]));
+  }
+  const spK=src.kw.find(([k])=>/^\$?SPILL(OVER)?$/i.test(k));
+  if(spK){
+    const sp=parseSpill(spK[1]);
+    if(sp){
+      const keep=sp.names.map((nm,i)=>[nm,i]).filter(([nm])=>keptNames.includes(nm.trim()));
+      if(keep.length){
+        const vals=[]; for(const [,i] of keep) for(const [,j] of keep) vals.push(sp.vals[i*sp.n+j]);
+        kw.push(["$SPILLOVER",[keep.length,...keep.map(k=>k[0]),...vals].join(",")]);
+      }
+      if(keep.length===sp.n) src.kw.filter(([k])=>/^INFINISPILL(_SRC)?$/i.test(k)).forEach(kv=>kw.push(kv));
+    }
+  }
+  kw.push(["$FIL",fileName],["$CELLS",popDesc.name]);
+  kw.push(["CYTEXP_SOURCE",Y.cytName],["CYTEXP_POPULATION",popDesc.path],["CYTEXP_EVENTS_AVAILABLE",String(popDesc.available)],
+          ["CYTEXP_SAMPLING",popDesc.sampling],["CYTEXP_DATE",new Date().toISOString()],["CYTEXP_VERSION","CYT Exporter "+VERSION]);
+  if(Y.profile) kw.push(["CYTEXP_PROFILE",Y.profile]);
+
+  const D="\x0C", enc=new TextEncoder();
+  const clean=s=>{ s=String(s).replace(/\x0C/g,D+D); return s===""?" ":s; };
+  const body=kw.map(([k,v])=>D+clean(k)+D+clean(v)).join("");
+  const dataBytes=nE*Po*4;
+  let bd=0,ed=0,txt;
+  for(let it=0;it<6;it++){
+    txt=enc.encode(body+D+"$BEGINANALYSIS"+D+"0"+D+"$ENDANALYSIS"+D+"0"+D+"$BEGINSTEXT"+D+"0"+D+"$ENDSTEXT"+D+"0"+D+"$BEGINDATA"+D+bd+D+"$ENDDATA"+D+ed+D);
+    const nbd=58+txt.length, ned=nbd+dataBytes-1;
+    if(nbd===bd && ned===ed) break; bd=nbd; ed=ned;
+  }
+  const pad=n=>String(n).padStart(8," ");
+  const big=ed>99999999;
+  const header="FCS3.1    "+pad(58)+pad(58+txt.length-1)+pad(big?0:bd)+pad(big?0:ed)+pad(0)+pad(0);
+  return new Blob([header, txt, new Uint8Array(data.buffer), "00000000"],{type:"application/octet-stream"});
+}
+
+async function buildExports(){
+  const nodes=selectedNodes(), joint=mode()==="joint", pcols=[...Y.parSel].sort((a,b)=>a-b);
+  const addPop=addPopOn(), samp=pf().sampling;
+  const labels=labelsFor(nodes);
+  const files=[];
+  const sampDesc=(nd,avail,k)=>k<avail ? (samp==="random"?`aleatorio (semilla ${seedFor(nd)}), ${k} de ${avail}`:`primeros ${k} de ${avail}`) : "todos";
+  if(joint){
+    const owner=ownerMap(nodes), label=new Int32Array(Y.N);
+    const descs=[];
+    for(let k=0;k<nodes.length;k++){
+      busy(true,"Preparando archivo conjunto",nodes[k].name,k/nodes.length); await tick();
+      const ev=pickEvents(null,k,owner), chosen=subsample(ev,limitFor(nodes[k]),seedFor(nodes[k]));
+      for(let i=0;i<chosen.length;i++) label[chosen[i]]=k+1;
+      descs.push(`${k+1}=${pathOf(nodes[k])} [${sampDesc(nodes[k],ev.length,chosen.length)}]`);
+    }
+    let n=0; for(let i=0;i<Y.N;i++) if(label[i]) n++;
+    const events=new Int32Array(n), popCol=addPop?new Float32Array(n):null; let j=0;
+    for(let i=0;i<Y.N;i++) if(label[i]){ events[j]=i; if(popCol) popCol[j]=label[i]; j++; }
+    const fname=renderName({poblacion:jointLabel(nodes),eventos:n,orden:1})+".fcs";
+    busy(true,"Escribiendo FCS",fname,1); await tick();
+    files.push({name:fname, blob:buildFCS({events,pcols,popCol,popLabels:nodes.map(pathOf),fileName:fname,
+      popDesc:{name:nodes.map(n=>n.name).join(" + "),path:descs.join(" | "),available:n,
+        sampling:samp==="random"?"aleatorio por poblacion, semilla base "+(pf().seed||0):"primeros adquiridos por poblacion"}})});
+  } else {
+    const picked=[];
+    for(let k=0;k<nodes.length;k++){
+      const nd=nodes[k]; busy(true,`Exportando ${k+1} de ${nodes.length}`,nd.name,k/nodes.length); await tick();
+      const look=new Uint8Array(Y.maxId+1); (function m(x){ look[x.id]=1; x.children.forEach(m); })(nd);
+      const ev=pickEvents(look), chosen=subsample(ev,limitFor(nd),seedFor(nd));
+      picked.push({nd,ev,chosen});
+    }
+    const names=dedupe(picked.map((p,k)=>renderName({poblacion:labels[k],eventos:p.chosen.length,orden:k+1}))).map(n=>n+".fcs");
+    picked.forEach(({nd,ev,chosen},k)=>{
+      const popCol=addPop?new Float32Array(chosen.length).fill(1):null;
+      files.push({name:names[k], blob:buildFCS({events:chosen,pcols,popCol,popLabels:[pathOf(nd)],fileName:names[k],
+        popDesc:{name:nd.name,path:pathOf(nd),available:ev.length,sampling:sampDesc(nd,ev.length,chosen.length)}})});
+    });
+  }
+  return files;
+}
+
+function download(blob,name){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+}
+function done(msg,kind){ const el=$('msg'); if(el) el.innerHTML=`<div class="cy-msg ${kind||'ok'}">${msg}</div>`; }
+async function exportDownload(){
+  try{
+    const files=await buildExports();
+    if(files.length===1) download(files[0].blob,files[0].name);
+    else{
+      const entries={};
+      for(let i=0;i<files.length;i++){ busy(true,"Creando ZIP",files[i].name,i/files.length); await tick(); entries[files[i].name]=[new Uint8Array(await files[i].blob.arrayBuffer()),{level:0}]; }
+      const zip=fflate.zipSync(entries);
+      download(new Blob([zip],{type:"application/zip"}),renderName({poblacion:"FCS",eventos:"",orden:""})+".zip");
+    }
+    busy(false); done(`Listo: ${files.length===1?"1 archivo .fcs":files.length+" archivos en un ZIP"} (${fmtMB(files.reduce((a,f)=>a+f.blob.size,0))}).`);
+  }catch(e){ busy(false); console.error(e); done("Error al exportar: "+esc(e.message),"err"); }
+}
+async function exportDir(){
+  let dir;
+  try{ dir=await window.showDirectoryPicker({mode:"readwrite"}); }catch(e){ return; }
+  try{
+    const files=await buildExports();
+    for(let i=0;i<files.length;i++){
+      busy(true,"Guardando en carpeta",files[i].name,i/files.length); await tick();
+      const fh=await dir.getFileHandle(files[i].name,{create:true}); const w=await fh.createWritable(); await w.write(files[i].blob); await w.close();
+    }
+    busy(false); done(`Guardados ${files.length} archivo(s) en la carpeta «${esc(dir.name)}».`);
+  }catch(e){ busy(false); console.error(e); done("Error al guardar: "+esc(e.message),"err"); }
+}
+function exportCSV(){
+  const ref=Y.byId.get(Y.refId), refC=shown(ref), refD=refAbsDen(ref), tot=shown(Y.root), epul=parseFloat(Y.epul);
+  const num=(v,d)=>isFinite(v)?v.toFixed(d).replace(".",","):"";
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const lines=[["Nivel","Población","Ruta","ID","Eventos","Eventos/µL","% total","% "+ref.name].join(";")];
+  for(const nd of Y.order){
+    const c=shown(nd), inRef=isDesc(nd,ref);
+    lines.push([nd.depth,q(nd.name),q(pathOf(nd)),nd.id,c,num(refD?c/refD*epul:NaN,5),num(tot?c/tot*100:NaN,5),inRef&&refC?num(c/refC*100,5):""].join(";"));
+  }
+  download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),renderName({poblacion:"estadisticas",eventos:"",orden:""})+".csv");
+}
+
+/* ---------- eventos de la interfaz ---------- */
+function toggleSel(nd,withKids){
+  const on=!Y.selected.has(nd.id);
+  const apply=x=>{ if(on) Y.selected.add(x.id); else Y.selected.delete(x.id); };
+  if(withKids){ (function w(x){ if(x.cV>0||x===nd) apply(x); x.children.forEach(w); })(nd); } else apply(nd);
+}
+function togglePanel(id){
+  const el=document.getElementById('cyp-'+id); if(!el) return;
+  const open=!el.classList.contains('open');
+  cfg().open[id]=open; saveLocalSoon();
+  el.classList.toggle('open',open);
+  const b=el.querySelector('.cfg-pnl-hd'); if(b) b.setAttribute('aria-expanded',open);
+}
+function setMode(m){
+  const p=pf(); if(p.mode===m) return;
+  p.mode=m; p.addPop=(m==="joint"); $('addPop').checked=p.addPop;
+  savePrefs(); renderSel();
+}
+function addNumLen(){
+  const inp=$('numAdd'); const L=parseInt(inp&&inp.value);
+  const p=pf(); if(!(L>=1&&L<=12)||p.numLens.includes(L)) return;
+  p.numLens=[...p.numLens,L].sort((a,b)=>a-b); savePrefs(); renderNumDet(); renderTokens(); updatePreview();
+}
+function onClick(e){
+  const t=e.target;
+  /* filas del árbol */
+  const tr=t.closest('#cy-tbody tr[data-id]');
+  if(tr){
+    const nd=Y.byId.get(parseInt(tr.dataset.id));
+    if(t.dataset.act==="sel"){ toggleSel(nd,e.shiftKey); renderTree(); renderSel(); return; }
+    if(t.closest('[data-act=tw]')){ if(Y.expanded.has(nd.id)) Y.expanded.delete(nd.id); else Y.expanded.add(nd.id); renderTree(); }
+    return;
+  }
+  const rm=t.closest('[data-rm]');
+  if(rm){ Y.selected.delete(parseInt(rm.dataset.rm)); renderTree(); renderSel(); return; }
+  const nr=t.closest('[data-numrm]');
+  if(nr){ const L=parseInt(nr.dataset.numrm); const p=pf(); p.numLens=p.numLens.filter(x=>x!==L); Y.numOv.delete(L); savePrefs(); saveState(); renderNumDet(); renderTokens(); updatePreview(); return; }
+  const tok=t.closest('[data-tok]');
+  if(tok){
+    const inp=$('tpl'), k="{"+tok.dataset.tok+"}", s=inp.selectionStart??inp.value.length, en=inp.selectionEnd??s, v=inp.value;
+    const sep=s>0 && !/[_\-. ]$/.test(v.slice(0,s)) ? "_" : "";
+    inp.value=v.slice(0,s)+sep+k+v.slice(en); const pos=s+sep.length+k.length;
+    inp.focus(); inp.setSelectionRange(pos,pos); pf().tpl=inp.value; savePrefs(); updatePreview(); return;
+  }
+  const b=t.closest('[data-a]'); if(!b) return;
+  switch(b.dataset.a){
+    case 'open': fileInput().click(); break;
+    case 'close': closeFile(); break;
+    case 'pnl': togglePanel(b.dataset.id); break;
+    case 'expAll': Y.order.forEach(nd=>Y.expanded.add(nd.id)); renderTree(); break;
+    case 'colAll': Y.expanded=new Set([Y.root.id]); renderTree(); break;
+    case 'none': Y.selected.clear(); renderTree(); renderSel(); break;
+    case 'leaves': Y.selected.clear(); Y.order.forEach(nd=>{ if(nd.cV>0 && nd!==Y.root && !nd.children.some(c=>c.cV>0)) Y.selected.add(nd.id); }); renderTree(); renderSel(); break;
+    case 'csv': exportCSV(); break;
+    case 'parAll': Y.parSel=new Set(Y.params.map(p=>p.idx)); renderParams(); renderSel(); break;
+    case 'parNone': Y.parSel=new Set(); renderParams(); renderSel(); break;
+    case 'parFluo': {
+      const isFluo=p=>/fluorescence/i.test(p.type) || (!!p.S && !/^(time|[fs]sc)/i.test(p.N));
+      Y.parSel=new Set(Y.params.filter(isFluo).map(p=>p.idx)); renderParams(); renderSel(); break; }
+    case 'mode': setMode(b.dataset.v); break;
+    case 'numadd': addNumLen(); break;
+    case 'zip': exportDownload(); break;
+    case 'dir': exportDir(); break;
+  }
+}
+function onDbl(e){
+  const tr=e.target.closest('#cy-tbody tr[data-id]'); if(!tr||e.target.tagName==="INPUT") return;
+  toggleSel(Y.byId.get(parseInt(tr.dataset.id)),false); renderTree(); renderSel();
+}
+function onKey(e){
+  if(e.key==="Enter" && e.target.id==="cy-numAdd"){ e.preventDefault(); addNumLen(); }
+  if((e.key==="Enter"||e.key===" ") && e.target.id==="cy-drop"){ e.preventDefault(); fileInput().click(); }
+}
+function onInput(e){
+  const t=e.target, id=t.id, p=pf();
+  if(id==="cy-search"){ Y.search=t.value.trim().toLowerCase(); renderTree(); return; }
+  if(id==="cy-epul"){ Y.epul=t.value===""?null:parseFloat(t.value); renderTree(); return; }
+  if(id==="cy-maxEv"){ p.maxEv=t.value; savePrefs(); renderSel(); return; }
+  if(id==="cy-seed"){ p.seed=t.value; savePrefs(); renderSel(); return; }
+  if(id==="cy-tpl"){ p.tpl=t.value; savePrefs(); updatePreview(); return; }
+  if(t.dataset.numlen!=null){
+    const L=parseInt(t.dataset.numlen); if(isNaN(L)) return;
+    const v=t.value.replace(/\D+/g,""); if(v!==t.value) t.value=v;
+    if(v) Y.numOv.set(L,v); else Y.numOv.delete(L);
+    renderTokens(); updatePreview(); saveState(); return;
+  }
+  if(t.dataset.lab!=null){ const nid=parseInt(t.dataset.lab), v=t.value.trim(); if(v) Y.labels.set(nid,v); else Y.labels.delete(nid); updatePreview(); saveState(); return; }
+  if(t.dataset.ov!=null){
+    const nid=parseInt(t.dataset.ov); if(isNaN(nid)) return;
+    const v=parseInt(t.value); if(v>0) Y.overrides.set(nid,v); else Y.overrides.delete(nid);
+    const nodes=selectedNodes(), av=availableCounts(nodes);
+    document.querySelectorAll("#cy-slist .cy-srow").forEach((row,i)=>{ const out=Math.min(av[i],limitFor(nodes[i])); row.querySelector(".cy-avail").textContent=fmtInt(out)+(out<av[i]?` / ${fmtInt(av[i])}`:""); });
+    renderSummary(nodes,av); updatePreview(); saveState();
+  }
+}
+function onChange(e){
+  const t=e.target, id=t.id, p=pf();
+  if(id==="cy-refSel"){ Y.refId=parseInt(t.value); fillRefSelect(); renderTree(); return; }
+  if(id==="cy-hideEmpty"){ p.hideEmpty=t.checked; savePrefs(); renderTree(); return; }
+  if(id==="cy-sampling"){ p.sampling=t.value; savePrefs(); renderSel(); return; }
+  if(id==="cy-addPop"){ p.addPop=t.checked; savePrefs(); renderSel(); return; }
+  if(id==="cy-dateFmt"){ p.dateFmt=t.value; savePrefs(); renderTokens(); updatePreview(); return; }
+  if(id==="cy-tplPreset"){ if(t.value){ p.tpl=t.value; $('tpl').value=t.value; t.value=""; savePrefs(); updatePreview(); } return; }
+  if(t.dataset.p!=null){
+    const n=parseInt(t.dataset.p); if(t.checked) Y.parSel.add(n); else Y.parSel.delete(n);
+    renderSel();
+  }
+}
+
+/* ---------- apertura de archivos ---------- */
+function fileInput(){
+  let el=document.getElementById('cy-file');
+  if(!el){
+    el=document.createElement('input'); el.type='file'; el.id='cy-file'; el.accept='.cyt'; el.style.display='none';
+    el.onchange=()=>{ const f=el.files[0]; if(f) openFile(f); el.value=""; };
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function openFile(f){
+  if(!/\.cyt$/i.test(f.name)){ toast("Eso no es un archivo .cyt de Infinicyt.",{icon:'alert'}); return; }
+  if(!inCyt()) setArea('cyt');
+  loadCyt(f);
+}
+const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
+["dragenter","dragover"].forEach(t=>document.addEventListener(t,e=>{
+  if(!inCyt()||!hasFiles(e)) return;
+  e.preventDefault(); const d=$('drop'); if(d) d.classList.add("over");
+}));
+document.addEventListener("dragleave",e=>{ if(!inCyt()) return; const d=$('drop'); if(d&&(!e.relatedTarget||!document.body.contains(e.relatedTarget))) d.classList.remove("over"); });
+document.addEventListener("drop",e=>{
+  if(!inCyt()||!hasFiles(e)) return;
+  e.preventDefault(); const d=$('drop'); if(d) d.classList.remove("over");
+  const f=e.dataTransfer.files[0]; if(f) openFile(f);
+});
+
+/* Resumen para la barra lateral. */
+function sideInfo(){
+  if(!Y.root) return 'Ningún archivo abierto. Arrastra un .cyt a la ventana o usa el botón de arriba.';
+  return `<b>${esc(Y.cytName)}</b><br>${fmtInt(Y.N)} eventos · ${Y.P} parámetros<br>${Y.selected.size} ${Y.selected.size===1?'población seleccionada':'poblaciones seleccionadas'}`;
+}
+
+window.renderCyt=renderCyt;
+window.CY={openFile:()=>fileInput().click(), sideInfo, loaded:()=>!!Y.root};
+})();
+</script>
 <script src="report-assets.js"></script>
 <script>
 /* ════════ ICONS (SVG inline, sin CDN) ════════ */
@@ -2409,6 +3585,7 @@ const ICONS={
   'bug':'<rect x="8" y="6" width="8" height="13" rx="4"/><path d="M12 6V3"/><path d="M8 10H4"/><path d="M20 10h-4"/><path d="M8 15H4"/><path d="M20 15h-4"/><path d="M9 4.5 7.5 3"/><path d="m15 4.5 1.5-1.5"/>',
   'bell':'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
   'image':'<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m3.5 17 4.8-4.8a2 2 0 0 1 2.8 0l3.2 3.2"/><path d="m13 14.5 1.9-1.9a2 2 0 0 1 2.8 0l2.8 2.8"/>',
+  'scatter':'<path d="M3 3v18h18"/><circle cx="8" cy="15" r="1.6"/><circle cx="12" cy="10" r="1.6"/><circle cx="16.5" cy="14" r="1.6"/><circle cx="17" cy="7" r="1.6"/>',
   'target':'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/>',
   'bell-off':'<path d="M8.7 3.3A6 6 0 0 1 18 8c0 2.2.3 3.9.7 5.2"/><path d="M6 8c0 7-3 9-3 9h13"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="m2 2 20 20"/>',
   'calendar':'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/>',
@@ -2424,7 +3601,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.7';
+const APP_VERSION='2.8';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -2648,7 +3825,7 @@ tipEl.addEventListener('mouseleave',()=>tipEl.classList.remove('show'));
    nueva; el resto de redibujos (un filtro, un ajuste) siguen siendo instantáneos.
    Todo ocurre en el mismo instante: quien llame a renderAll encuentra ya la
    vista nueva en el DOM. */
-const AREA_ORDER=['dashboard','agenda','projects','phenotype','reports','strategies','config'];
+const AREA_ORDER=['dashboard','agenda','projects','phenotype','reports','strategies','cyt','config'];
 let _shownArea=null;
 function renderAll(){
   const prev=_shownArea,next=V.area;_shownArea=next;
@@ -2717,6 +3894,7 @@ function renderMain(){
   if(V.area==='dashboard')renderDashboard(c);
   else if(V.area==='agenda')renderAgenda(c);
   else if(V.area==='strategies')renderStrategies(c);
+  else if(V.area==='cyt')renderCyt(c);
   else if(V.area==='phenotype')renderPhenotype(c);
   else if(V.area==='reports')renderReports(c);
   else if(V.area==='config')renderConfig(c);
@@ -4653,12 +5831,15 @@ function renderSidebar(){
     const lista=stList().length?stList().map(e=>`<div class="sitem ritem ${V.stpage==='edit'&&V.stid===e.id?'on':''}" onclick="stOpen('${e.id}')" title="${esc(stTitle(e))}">${ic('target',17)}<span class="nm">${esc(stTitle(e))}</span><span class="ritem-acts"><button class="pact" title="Duplicar" onclick="event.stopPropagation();stDuplicate('${e.id}')">${ic('copy',16)}</button><button class="pact dng" title="Eliminar" onclick="event.stopPropagation();stDelete('${e.id}')">${ic('trash',16)}</button></span></div>`).join(''):'<div class="side-empty">Aún no hay estrategias.</div>';
     ctx=`<div class="side-new"><button class="new-btn" onclick="stNew()">${ic('plus',19)} Nueva estrategia</button></div>
       <div class="side-lbl">Estrategias</div><div class="slist">${lista}</div>`;
+  }else if(V.area==='cyt'){
+    ctx=`<div class="side-new"><button class="new-btn" onclick="CY.openFile()">${ic('upload',19)} Abrir archivo .cyt</button></div>
+      <div class="side-lbl">Archivo actual</div><div class="side-hint" id="cySideInfo">${CY.sideInfo()}</div><div style="flex:1"></div>`;
   }else if(V.area==='config'){
     ctx=`<div class="side-hint">Ajustes de la aplicación: datos, copias de seguridad, apariencia, fenotipos y atajos.</div><div style="flex:1"></div>`;
   }else{
     ctx=`<div style="flex:1"></div>`;
   }
-  el.innerHTML=`<div class="side-top">${areaBtn('dashboard','dashboard','Dashboard')}${areaBtn('agenda','calendar','Agenda')}${areaBtn('projects','folders','Proyectos')}${areaBtn('phenotype','flask','Fenotipos')}${areaBtn('reports','report','Informes')}${areaBtn('strategies','target','Estrategias')}</div>
+  el.innerHTML=`<div class="side-top">${areaBtn('dashboard','dashboard','Dashboard')}${areaBtn('agenda','calendar','Agenda')}${areaBtn('projects','folders','Proyectos')}${areaBtn('phenotype','flask','Fenotipos')}${areaBtn('reports','report','Informes')}${areaBtn('strategies','target','Estrategias')}${areaBtn('cyt','scatter','Exportador CYT')}</div>
     <div class="side-div"></div>
     ${ctx}
     <div class="side-bot">${areaBtn('config','settings','Configuración')}</div>`;
@@ -8899,6 +10080,7 @@ function paletteCommands(){
     {g:'Acciones',t:'Notas',icon:'message',run:()=>{closePalette();openNotes();}},
     {g:'Acciones',t:'Agenda',icon:'calendar',run:()=>{closePalette();setArea('agenda');}},
     {g:'Acciones',t:'Estrategias de gating',icon:'target',run:()=>{closePalette();setArea('strategies');}},
+    {g:'Acciones',t:'Exportador CYT (Infinicyt → FCS)',icon:'scatter',run:()=>{closePalette();setArea('cyt');}},
     {g:'Acciones',t:'Nueva estrategia',icon:'plus',run:()=>{closePalette();stNew();}},
     {g:'Acciones',t:'Nuevo evento en la agenda',icon:'plus',run:()=>{closePalette();setArea('agenda');agNew(todayYmd());}},
     {g:'Acciones',t:'Atajos de teclado',icon:'info',run:()=>{closePalette();openShortcuts();}}
