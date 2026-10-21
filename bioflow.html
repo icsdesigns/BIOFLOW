@@ -2360,6 +2360,9 @@ table.cy-tree{width:100%;border-collapse:collapse;font-size:13.5px}
 .cy-acts{display:flex;gap:8px;flex-wrap:wrap}
 .cy-acts .btn{flex:1;justify-content:center;height:34px}
 .cy-acts .btn:disabled{opacity:.45;pointer-events:none}
+.cy-lastdir{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--tx3)}
+.cy-lastdir:empty{display:none}
+.cy-lastdir b{color:var(--tx2);font-weight:600;overflow-wrap:anywhere}
 #cy-msg:empty{display:none}
 .cy-msg{padding:8px 11px;border-radius:var(--r-s);font-size:12.5px;margin-top:8px;line-height:1.45}
 #cy-msg .cy-msg{margin-top:0}
@@ -2507,9 +2510,10 @@ const Y={
   params:[], parSel:new Set(), search:"", persistNote:""
 };
 let restoreTried=false;
+let lastDir=null;   // {handle,name} de la última carpeta donde se guardó
 
 /* Preferencias de exportación y paneles abiertos (viajan con S). */
-const PF_DEF={tpl:"{muestra}_{poblacion}",dateFmt:"ymd",mode:"each",maxEv:"",sampling:"random",seed:"12345",addPop:null,hideEmpty:true,numLens:[5,6]};
+const PF_DEF={lastPath:"",lastDirName:"",tpl:"{muestra}_{poblacion}",dateFmt:"ymd",mode:"each",maxEv:"",sampling:"random",seed:"12345",addPop:null,hideEmpty:true,numLens:[5,6]};
 function cfg(){ if(!S.cyt||typeof S.cyt!=='object') S.cyt={}; if(!S.cyt.prefs||typeof S.cyt.prefs!=='object') S.cyt.prefs={}; if(!S.cyt.open||typeof S.cyt.open!=='object') S.cyt.open={}; return S.cyt; }
 function pf(){
   const p=cfg().prefs;
@@ -2943,8 +2947,9 @@ function pageHTML(){
           </div>
           <div class="cy-acts">
             <button class="btn btn-p" id="cy-zip" data-a="zip">${ic('download',16)} <span id="cy-zipT">Descargar</span></button>
-            <button class="btn btn-g" id="cy-dir" data-a="dir" title="Guarda los .fcs directamente en una carpeta">${ic('folder',16)} Guardar en carpeta…</button>
+            <button class="btn btn-g" id="cy-dir" data-a="dir" title="Guarda los .fcs directamente en una carpeta">${ic('folder',16)} <span id="cy-dirT">Guardar en carpeta…</span></button>
           </div>
+          <div class="cy-lastdir" id="cy-lastdir"></div>
           <div id="cy-msg"></div>
         </section>
         <div class="cfg-pnls">${PANELS.map(panelHTML).join('')}</div>
@@ -2982,8 +2987,8 @@ function initUI(){
   $('epulNote').textContent = Y.epulFile!=null ? `Valor guardado en el .cyt: ${fmtAbs(Y.epulFile)}.` : "El archivo no trae valor: introduce el recuento de la referencia.";
   $('nanNote').textContent = Y.nanCount ? `${fmtInt(Y.nanCount)} eventos eliminados (NaN): no cuentan en los recuentos ni se exportan, pero sí en el denominador de eventos/µL, como en Infinicyt.` : "";
   $('sampling').value=p.sampling; $('dateFmt').value=p.dateFmt; $('addPop').checked=addPopOn();
-  if(!window.showDirectoryPicker) $('dir').title="Esta ventana no permite guardar en carpeta; usa Descargar";
   fillRefSelect(); renderParams(); renderTokens(); renderNumDet(); renderTree(); renderSel();
+  loadLastDir();
 }
 
 function fillRefSelect(){
@@ -3191,8 +3196,8 @@ function renderSel(){
     </div>`;}).join("");
   const {totEv,files}=renderSummary(nodes,av);
   const ok=nodes.length>0 && Y.parSel.size>0 && totEv>0;
-  $('zip').disabled=!ok; $('dir').disabled=!ok || !window.showDirectoryPicker;
-  $('zipT').textContent = files===1 ? "Descargar .fcs" : "Descargar ZIP";
+  $('zip').disabled=!ok; $('dir').disabled=!ok;
+  $('zipT').textContent = (desktopSave()?"Guardar ":"Descargar ")+(files===1 ? ".fcs" : "ZIP");
   $('seedWrap').style.visibility = pf().sampling==="random" ? "visible":"hidden";
   $('msg').innerHTML = (!Y.parSel.size && nodes.length) ? '<div class="cy-msg warn">Selecciona al menos un parámetro.</div>' : "";
   updatePreview(); refreshSide(); saveState();
@@ -3332,6 +3337,24 @@ async function buildExports(){
   return files;
 }
 
+/* En la app de escritorio no hay selector de carpetas del navegador: se usa el
+   diálogo «Guardar como» nativo y se recuerda la carpeta del último archivo. */
+const desktopSave=()=>typeof DESKTOP!=='undefined'&&DESKTOP&&window.desktop&&window.desktop.saveBytes;
+function rememberPath(path){
+  if(!path) return;
+  const dir=String(path).replace(/[\\/][^\\/]*$/,"");
+  pf().lastPath=path; pf().lastDirName=dir.split(/[\\/]/).filter(Boolean).pop()||dir; savePrefs(); paintLastDir();
+}
+async function saveOut(blob,name){
+  if(desktopSave()){
+    const res=await window.desktop.saveBytes(name,bytesToB64(new Uint8Array(await blob.arrayBuffer())),(name.split('.').pop()||'').toLowerCase());
+    if(res&&res.canceled) return false;
+    if(!(res&&res.ok)) throw new Error("No se pudo guardar el archivo.");
+    rememberPath(res.path); try{ showExportPopup(res.path); }catch(e){}
+    return true;
+  }
+  download(blob,name); return true;
+}
 function download(blob,name){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000);
@@ -3340,19 +3363,61 @@ function done(msg,kind){ const el=$('msg'); if(el) el.innerHTML=`<div class="cy-
 async function exportDownload(){
   try{
     const files=await buildExports();
-    if(files.length===1) download(files[0].blob,files[0].name);
+    let saved=true;
+    if(files.length===1) saved=await saveOut(files[0].blob,files[0].name);
     else{
       const entries={};
       for(let i=0;i<files.length;i++){ busy(true,"Creando ZIP",files[i].name,i/files.length); await tick(); entries[files[i].name]=[new Uint8Array(await files[i].blob.arrayBuffer()),{level:0}]; }
       const zip=fflate.zipSync(entries);
-      download(new Blob([zip],{type:"application/zip"}),renderName({poblacion:"FCS",eventos:"",orden:""})+".zip");
+      busy(false);
+      saved=await saveOut(new Blob([zip],{type:"application/zip"}),renderName({poblacion:"FCS",eventos:"",orden:""})+".zip");
     }
-    busy(false); done(`Listo: ${files.length===1?"1 archivo .fcs":files.length+" archivos en un ZIP"} (${fmtMB(files.reduce((a,f)=>a+f.blob.size,0))}).`);
+    busy(false); if(!saved) return; done(`Listo: ${files.length===1?"1 archivo .fcs":files.length+" archivos en un ZIP"} (${fmtMB(files.reduce((a,f)=>a+f.blob.size,0))}).`);
   }catch(e){ busy(false); console.error(e); done("Error al exportar: "+esc(e.message),"err"); }
 }
-async function exportDir(){
+/* Última carpeta de exportación: el handle se guarda en IndexedDB y se reutiliza
+   (el navegador puede volver a pedir permiso al primer uso de la sesión). */
+function paintLastDir(){
+  const t=$('dirT'), box=$('lastdir'); if(!t||!box) return;
+  if(desktopSave()){
+    const d=$('dir'); if(d) d.style.display="none";
+    const lp=pf().lastPath;
+    box.innerHTML = lp ? `<span>Última carpeta: <b>${esc(pf().lastDirName||"")}</b></span>${window.desktop.showInFolder?'<button class="btn btn-g sm" data-a="showdir">Abrir carpeta</button>':''}` : "";
+    return;
+  }
+  t.textContent = lastDir ? `Guardar en «${lastDir.name}»` : "Guardar en carpeta…";
+  box.innerHTML = lastDir ? `<span>Última carpeta: <b>${esc(lastDir.name)}</b></span><button class="btn btn-g sm" data-a="dirnew">Cambiar…</button>` : "";
+}
+async function loadLastDir(){
+  if(!lastDir){ try{ const v=await DB.get("lastDir"); if(v&&v.handle) lastDir={handle:v.handle,name:v.handle.name||v.name||""}; }catch(e){} }
+  paintLastDir();
+}
+async function pickDir(forcePick){
+  if(lastDir&&!forcePick){
+    try{
+      let perm=await lastDir.handle.queryPermission({mode:"readwrite"});
+      if(perm!=="granted") perm=await lastDir.handle.requestPermission({mode:"readwrite"});
+      if(perm==="granted") return lastDir.handle;
+    }catch(e){ lastDir=null; }
+  }
+  const opts={mode:"readwrite",id:"bioflow-cyt"};
+  if(lastDir) opts.startIn=lastDir.handle;
+  const dir=await window.showDirectoryPicker(opts);
+  lastDir={handle:dir,name:dir.name};
+  DB.put("lastDir",{handle:dir,name:dir.name}).catch(e=>console.warn(e));
+  paintLastDir();
+  return dir;
+}
+async function exportDir(forcePick){
   let dir;
-  try{ dir=await window.showDirectoryPicker({mode:"readwrite"}); }catch(e){ return; }
+  if(!window.showDirectoryPicker) return exportDownload();   // sin selector de carpetas: «Guardar como» / descarga
+  try{ dir=await pickDir(forcePick===true); }
+  catch(e){
+    if(e&&e.name==="AbortError") return;
+    console.warn("Selector de carpetas no disponible:",e);
+    toast("No se pudo usar el selector de carpetas; se guarda con «Guardar como».",{icon:'alert'});
+    lastDir=null; return exportDownload();
+  }
   try{
     const files=await buildExports();
     for(let i=0;i<files.length;i++){
@@ -3371,7 +3436,7 @@ function exportCSV(){
     const c=shown(nd), inRef=isDesc(nd,ref);
     lines.push([nd.depth,q(nd.name),q(pathOf(nd)),nd.id,c,num(refD?c/refD*epul:NaN,5),num(tot?c/tot*100:NaN,5),inRef&&refC?num(c/refC*100,5):""].join(";"));
   }
-  download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),renderName({poblacion:"estadisticas",eventos:"",orden:""})+".csv");
+  saveOut(new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),renderName({poblacion:"estadisticas",eventos:"",orden:""})+".csv").catch(e=>toast(e.message,{icon:'alert'}));
 }
 
 /* ---------- eventos de la interfaz ---------- */
@@ -3437,6 +3502,8 @@ function onClick(e){
     case 'numadd': addNumLen(); break;
     case 'zip': exportDownload(); break;
     case 'dir': exportDir(); break;
+    case 'showdir': try{ window.desktop.showInFolder(pf().lastPath); }catch(e){} break;
+    case 'dirnew': pickDir(true).catch(()=>{}); break;
   }
 }
 function onDbl(e){
@@ -3601,7 +3668,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.11';
+const APP_VERSION='2.12';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
