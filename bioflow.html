@@ -2360,6 +2360,9 @@ table.cy-tree{width:100%;border-collapse:collapse;font-size:13.5px}
 .cy-acts{display:flex;gap:8px;flex-wrap:wrap}
 .cy-acts .btn{flex:1;justify-content:center;height:34px}
 .cy-acts .btn:disabled{opacity:.45;pointer-events:none}
+.cy-lastdir{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--tx3)}
+.cy-lastdir:empty{display:none}
+.cy-lastdir b{color:var(--tx2);font-weight:600;overflow-wrap:anywhere}
 #cy-msg:empty{display:none}
 .cy-msg{padding:8px 11px;border-radius:var(--r-s);font-size:12.5px;margin-top:8px;line-height:1.45}
 #cy-msg .cy-msg{margin-top:0}
@@ -2507,6 +2510,7 @@ const Y={
   params:[], parSel:new Set(), search:"", persistNote:""
 };
 let restoreTried=false;
+let lastDir=null;   // {handle,name} de la última carpeta donde se guardó
 
 /* Preferencias de exportación y paneles abiertos (viajan con S). */
 const PF_DEF={tpl:"{muestra}_{poblacion}",dateFmt:"ymd",mode:"each",maxEv:"",sampling:"random",seed:"12345",addPop:null,hideEmpty:true,numLens:[5,6]};
@@ -2943,8 +2947,9 @@ function pageHTML(){
           </div>
           <div class="cy-acts">
             <button class="btn btn-p" id="cy-zip" data-a="zip">${ic('download',16)} <span id="cy-zipT">Descargar</span></button>
-            <button class="btn btn-g" id="cy-dir" data-a="dir" title="Guarda los .fcs directamente en una carpeta">${ic('folder',16)} Guardar en carpeta…</button>
+            <button class="btn btn-g" id="cy-dir" data-a="dir" title="Guarda los .fcs directamente en una carpeta">${ic('folder',16)} <span id="cy-dirT">Guardar en carpeta…</span></button>
           </div>
+          <div class="cy-lastdir" id="cy-lastdir"></div>
           <div id="cy-msg"></div>
         </section>
         <div class="cfg-pnls">${PANELS.map(panelHTML).join('')}</div>
@@ -2984,6 +2989,7 @@ function initUI(){
   $('sampling').value=p.sampling; $('dateFmt').value=p.dateFmt; $('addPop').checked=addPopOn();
   if(!window.showDirectoryPicker) $('dir').title="Esta ventana no permite guardar en carpeta; usa Descargar";
   fillRefSelect(); renderParams(); renderTokens(); renderNumDet(); renderTree(); renderSel();
+  loadLastDir();
 }
 
 function fillRefSelect(){
@@ -3350,9 +3356,36 @@ async function exportDownload(){
     busy(false); done(`Listo: ${files.length===1?"1 archivo .fcs":files.length+" archivos en un ZIP"} (${fmtMB(files.reduce((a,f)=>a+f.blob.size,0))}).`);
   }catch(e){ busy(false); console.error(e); done("Error al exportar: "+esc(e.message),"err"); }
 }
-async function exportDir(){
+/* Última carpeta de exportación: el handle se guarda en IndexedDB y se reutiliza
+   (el navegador puede volver a pedir permiso al primer uso de la sesión). */
+function paintLastDir(){
+  const t=$('dirT'), box=$('lastdir'); if(!t||!box) return;
+  t.textContent = lastDir ? `Guardar en «${lastDir.name}»` : "Guardar en carpeta…";
+  box.innerHTML = lastDir ? `<span>Última carpeta: <b>${esc(lastDir.name)}</b></span><button class="btn btn-g sm" data-a="dirnew">Cambiar…</button>` : "";
+}
+async function loadLastDir(){
+  if(!lastDir){ try{ const v=await DB.get("lastDir"); if(v&&v.handle) lastDir={handle:v.handle,name:v.handle.name||v.name||""}; }catch(e){} }
+  paintLastDir();
+}
+async function pickDir(forcePick){
+  if(lastDir&&!forcePick){
+    try{
+      let perm=await lastDir.handle.queryPermission({mode:"readwrite"});
+      if(perm!=="granted") perm=await lastDir.handle.requestPermission({mode:"readwrite"});
+      if(perm==="granted") return lastDir.handle;
+    }catch(e){ lastDir=null; }
+  }
+  const opts={mode:"readwrite",id:"bioflow-cyt"};
+  if(lastDir) opts.startIn=lastDir.handle;
+  const dir=await window.showDirectoryPicker(opts);
+  lastDir={handle:dir,name:dir.name};
+  DB.put("lastDir",{handle:dir,name:dir.name}).catch(e=>console.warn(e));
+  paintLastDir();
+  return dir;
+}
+async function exportDir(forcePick){
   let dir;
-  try{ dir=await window.showDirectoryPicker({mode:"readwrite"}); }catch(e){ return; }
+  try{ dir=await pickDir(forcePick===true); }catch(e){ return; }
   try{
     const files=await buildExports();
     for(let i=0;i<files.length;i++){
@@ -3437,6 +3470,7 @@ function onClick(e){
     case 'numadd': addNumLen(); break;
     case 'zip': exportDownload(); break;
     case 'dir': exportDir(); break;
+    case 'dirnew': pickDir(true).catch(()=>{}); break;
   }
 }
 function onDbl(e){
@@ -3601,7 +3635,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
