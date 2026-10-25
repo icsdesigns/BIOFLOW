@@ -2490,9 +2490,9 @@ table.cy-tree{width:100%;border-collapse:collapse;font-size:13.5px}
 
    Vive en su propio script (antes del principal) y sólo expone renderCyt()
    y el objeto CY. Usa S.cyt para lo que se recuerda entre sesiones (paneles
-   abiertos y preferencias de exportación); el último .cyt abierto va en
-   IndexedDB y el estado de cada archivo (selección, referencia…) en
-   localStorage, porque pueden ser grandes.
+   abiertos y preferencias de exportación); el estado de cada archivo
+   (selección, referencia…) va en localStorage. El archivo abierto no se
+   conserva al reiniciar: la pestaña empieza siempre vacía.
    ════════════════════════════════════════════════════════════ */
 (function(){
 "use strict";
@@ -2507,7 +2507,7 @@ const Y={
   directAll:new Map(), directValid:new Map(),
   refId:null, epulFile:null, epul:null, numOv:new Map(),
   expanded:new Set(), selected:new Set(), overrides:new Map(), labels:new Map(),
-  params:[], parSel:new Set(), search:"", persistNote:""
+  params:[], parSel:new Set(), search:""
 };
 let restoreTried=false;
 let lastDir=null;   // {handle,name} de la última carpeta donde se guardó
@@ -2562,7 +2562,7 @@ function decodeText(u8){ try{ return new TextDecoder("utf-8",{fatal:true}).decod
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
 /* ---------- persistencia ----------
-   · el último .cyt abierto se guarda en IndexedDB (se reabre al volver)
+   · la última carpeta de exportación se guarda en IndexedDB
    · el estado de cada archivo va en localStorage (se conservan los últimos 15) */
 const DB={
   open(){ return new Promise((res,rej)=>{ const r=indexedDB.open("cyt-exporter",1); r.onupgradeneeded=()=>r.result.createObjectStore("files"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); },
@@ -2673,9 +2673,9 @@ function fmtDate(d){
 const fmtDateHuman=d=>d ? d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
 
 /* ---------- carga del .cyt ---------- */
-async function loadCyt(file,{restore=false}={}){
+async function loadCyt(file){
   try{
-    busy(true,(restore?"Reabriendo ":"Leyendo ")+file.name,"Descomprimiendo…");
+    busy(true,"Leyendo "+file.name,"Descomprimiendo…");
     await tick();
     const buf=new Uint8Array(await file.arrayBuffer());
     if(!(buf[0]===0x50 && buf[1]===0x4B)) throw new Error("No parece un archivo .cyt (no es un contenedor ZIP).");
@@ -2763,20 +2763,13 @@ async function loadCyt(file,{restore=false}={}){
       Y.numOv=new Map((st.numOv||[]).filter(([L,v])=>Number.isInteger(L)&&/^\d+$/.test(v)));
     }
     busy(false);
-    Y.persistNote = restore ? "Reabierto automáticamente." : "Guardando para reabrir al volver…";
     redraw();
 
-    if(!restore){
-      DB.put("last",{name:file.name,file}).then(()=>{ Y.persistNote="Se reabrirá automáticamente al volver a esta pestaña."; setNote(); })
-        .catch(e=>{ console.warn(e); Y.persistNote="No se ha podido guardar para reabrirlo: habrá que abrirlo de nuevo."; setNote(); });
-    }
   }catch(err){
     busy(false); console.error(err);
-    if(restore){ DB.del("last").catch(()=>{}); return; }
     toast("No se pudo abrir el archivo: "+err.message,{icon:'alert',duration:9000});
   }
 }
-function setNote(){ const el=$('persist'); if(el) el.textContent=Y.persistNote; }
 function redraw(){ if(inCyt()){ renderMain(); renderSidebar(); } }
 function refreshSide(){ const el=document.getElementById('cySideInfo'); if(el) el.innerHTML=sideInfo(); }
 
@@ -2907,11 +2900,11 @@ function pageHTML(){
       <div class="cy-drop-ic">${ic('upload',34)}</div>
       <h3>Arrastra aquí un archivo .cyt de Infinicyt</h3>
       <p>o haz clic para seleccionarlo</p>
-      <span class="cy-fine">Los datos no salen del equipo. El último archivo abierto se conserva para la próxima vez.</span>
+      <span class="cy-fine">Los datos no salen del equipo.</span>
     </div></div>`;
   return `<div class="wrap cy" id="cy-root">${hero}
     <section class="rp-card cy-file">
-      <div class="cy-file-hd"><span class="sec-ico">${ic('file',19)}</span><div class="cy-file-tx"><b>${esc(Y.cytName)}</b><span id="cy-persist">${esc(Y.persistNote)}</span></div></div>
+      <div class="cy-file-hd"><span class="sec-ico">${ic('file',19)}</span><div class="cy-file-tx"><b>${esc(Y.cytName)}</b><span>Procesado en este equipo</span></div></div>
       <div class="cy-kvs">${fileChips()}</div>
     </section>
     <div class="cy-grid">
@@ -2969,15 +2962,11 @@ function renderCyt(c){
   root.addEventListener('keydown',onKey);
   if(Y.root) initUI(); else ensureRestored();
 }
-async function ensureRestored(){
+/* Al abrir la pestaña por primera vez en la sesión no se carga ningún archivo.
+   Se borra el que versiones anteriores guardaban para reabrirlo. */
+function ensureRestored(){
   if(restoreTried) return; restoreTried=true;
-  try{
-    const last=await DB.get("last");
-    if(last && last.file){
-      const f=last.file instanceof File ? last.file : new File([last.file], last.name||"archivo.cyt");
-      await loadCyt(f,{restore:true});
-    }
-  }catch(e){ console.warn("No se pudo reabrir el último archivo",e); }
+  DB.del("last").catch(()=>{});
 }
 
 function initUI(){
@@ -3653,7 +3642,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.14';
+const APP_VERSION='2.15';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
