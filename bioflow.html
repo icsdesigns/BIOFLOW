@@ -2410,7 +2410,7 @@ table.cy-tree{width:100%;border-collapse:collapse;font-size:13.5px}
 .cy-busy-t{display:flex;align-items:center;gap:10px;font-size:14px}
 .cy-bar{height:6px;background:var(--sf3);border-radius:99px;overflow:hidden;margin-top:12px}
 .cy-bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .15s}
-.cy-spin{width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:cy-sp 1s linear infinite;display:inline-block;flex:none}
+.cy-spin{will-change:transform;width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:cy-sp 1s linear infinite;display:inline-block;flex:none}
 @keyframes cy-sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.cy-spin{animation-duration:2.4s}.cy-tw svg{transition:none}}
 @media (max-width:560px){
@@ -2541,7 +2541,11 @@ function fmtAbs(v){
   return v.toLocaleString("es-ES",{maximumSignificantDigits:3});
 }
 function fmtMB(b){ return b>=1e9 ? (b/1e9).toLocaleString("es-ES",{maximumFractionDigits:2})+" GB" : (b/1e6).toLocaleString("es-ES",{maximumFractionDigits:1})+" MB"; }
-const tick=()=>new Promise(r=>setTimeout(r,16));
+/* Cede el hilo para que el navegador pinte (y la rueda de espera siga girando).
+   Con la pestaña oculta no hay fotogramas, de ahí el plazo máximo. */
+const tick=()=>new Promise(r=>{ let ok=false; const go=()=>{ if(!ok){ ok=true; r(); } }; requestAnimationFrame(()=>setTimeout(go,0)); setTimeout(go,60); });
+let _yieldAt=0;
+const yieldSoon=async()=>{ const t=performance.now(); if(t-_yieldAt>25){ await tick(); _yieldAt=performance.now(); } };
 const inCyt=()=>typeof V!=='undefined'&&V.area==='cyt';
 
 /* Pantalla de espera con barra de progreso. */
@@ -2672,6 +2676,45 @@ function fmtDate(d){
 }
 const fmtDateHuman=d=>d ? d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
 
+/* ---------- descompresión ----------
+   El .cyt es un ZIP. Se descomprime con DecompressionStream (nativo, fuera del
+   hilo principal) para que la rueda de espera no se congele; si el navegador no
+   lo tiene, o el ZIP usa ZIP64, se recurre a fflate en el hilo principal. */
+async function unzipWanted(buf,want){
+  try{
+    if(typeof DecompressionStream==="undefined") throw new Error("sin DecompressionStream");
+    const dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);
+    let e=buf.length-22; while(e>=0 && dv.getUint32(e,true)!==0x06054b50) e--;
+    if(e<0) throw new Error("sin directorio central");
+    const count=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true);
+    if(count===0xFFFF||p===0xFFFFFFFF) throw new Error("ZIP64");
+    const out={};
+    for(let k=0;k<count;k++){
+      if(dv.getUint32(p,true)!==0x02014b50) throw new Error("directorio central dañado");
+      const method=dv.getUint16(p+10,true), cs=dv.getUint32(p+20,true), us=dv.getUint32(p+24,true);
+      const nl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lo=dv.getUint32(p+42,true);
+      const name=new TextDecoder().decode(buf.subarray(p+46,p+46+nl));
+      p+=46+nl+xl+cl;
+      if(!want.has(name)) continue;
+      if(cs===0xFFFFFFFF||us===0xFFFFFFFF||lo===0xFFFFFFFF) throw new Error("ZIP64");
+      if(dv.getUint32(lo,true)!==0x04034b50) throw new Error("cabecera local dañada");
+      const start=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true);
+      const raw=buf.subarray(start,start+cs);
+      if(method===0) out[name]=raw.slice();
+      else if(method===8){
+        const ab=await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();
+        out[name]=new Uint8Array(ab);
+      } else throw new Error("método de compresión "+method);
+      await tick();
+    }
+    return out;
+  }catch(err){
+    console.warn("Descompresión nativa no disponible, se usa fflate:",err);
+    await tick();
+    return fflate.unzipSync(buf,{filter:f=>want.has(f.name)});
+  }
+}
+
 /* ---------- carga del .cyt ---------- */
 async function loadCyt(file){
   try{
@@ -2680,7 +2723,7 @@ async function loadCyt(file){
     const buf=new Uint8Array(await file.arrayBuffer());
     if(!(buf[0]===0x50 && buf[1]===0x4B)) throw new Error("No parece un archivo .cyt (no es un contenedor ZIP).");
     const want=new Set(["data.fcs","data.pr","data.prmx","data.infx"]);
-    const z=fflate.unzipSync(buf,{filter:f=>want.has(f.name)});
+    const z=await unzipWanted(buf,want);
     if(!z["data.fcs"]) throw new Error("El archivo no contiene data.fcs.");
     if(!z["data.pr"]) throw new Error("El archivo no contiene data.pr (asignación de eventos).");
     busy(true,null,"Leyendo eventos FCS…"); await tick();
@@ -2693,7 +2736,7 @@ async function loadCyt(file){
     const n=dv.getUint32(2,false);
     if(n!==fcs.N) throw new Error(`Número de eventos distinto entre data.pr (${n}) y data.fcs (${fcs.N}). Puede tratarse de un archivo fusionado de varios tubos, que aún no está soportado.`);
     const pop=new Int32Array(n);
-    for(let i=0;i<n;i++) pop[i]=dv.getInt32(6+4*i,false);
+    for(let i=0;i<n;i++){ pop[i]=dv.getInt32(6+4*i,false); if((i&32767)===0) await yieldSoon(); }
 
     let rootEl=null, epulFile=null, refId=null;
     if(z["data.prmx"]){
@@ -2711,12 +2754,12 @@ async function loadCyt(file){
 
     // eventos eliminados (todos los valores NaN)
     const P=fcs.P, F=fcs.F, nan=new Uint8Array(n); let nanCount=0;
-    for(let i=0;i<n;i++){ const b=i*P; for(let p=0;p<P;p++){ if(F[b+p]!==F[b+p]){ nan[i]=1; nanCount++; break; } } }
+    for(let i=0;i<n;i++){ const b=i*P; for(let p=0;p<P;p++){ if(F[b+p]!==F[b+p]){ nan[i]=1; nanCount++; break; } } if((i&8191)===0) await yieldSoon(); }
 
     const byId=new Map(); let maxId=0;
     (function walk(nd){ byId.set(nd.id,nd); maxId=Math.max(maxId,nd.id); nd.children.forEach(walk); })(root);
     const dA=new Map(), dV=new Map();
-    for(let i=0;i<n;i++){ const id=pop[i]; dA.set(id,(dA.get(id)||0)+1); if(!nan[i]) dV.set(id,(dV.get(id)||0)+1); }
+    for(let i=0;i<n;i++){ const id=pop[i]; dA.set(id,(dA.get(id)||0)+1); if(!nan[i]) dV.set(id,(dV.get(id)||0)+1); if((i&32767)===0) await yieldSoon(); }
     for(const id of dA.keys()) if(!byId.has(id)){
       const nd={id,name:`ID ${id} (no definida en el árbol)`,color:"#999999",parent:root,depth:1,children:[]};
       root.children.push(nd); byId.set(id,nd); maxId=Math.max(maxId,id);
@@ -3642,7 +3685,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.15';
+const APP_VERSION='2.16';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
