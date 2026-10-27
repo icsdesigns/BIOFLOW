@@ -3685,7 +3685,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.17';
+const APP_VERSION='2.18';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -4439,7 +4439,7 @@ function download(name,content,mime){const blob=new Blob([content],{type:mime||'
 /* Preferencias que viajan con el archivo de datos: al importar la copia en otro
    equipo se recupera la app tal y como estaba (tema, escala, densidad, sistema
    de relleno de celda, modo de pegado…), no sólo el contenido. */
-const SETTING_KEYS=['theme','lastLightTheme','lastDarkTheme','scale','wide','compact','flowCompact','sideOff','showLoader','syncReminder','celPasteMode','agView','agShowDue','stScale'];
+const SETTING_KEYS=['theme','lastLightTheme','lastDarkTheme','scale','wide','compact','flowCompact','sideOff','showLoader','syncReminder','celPasteMode','agView','agShowDue','stScale','stDpi'];
 function settingsPayload(){
   const o={};
   SETTING_KEYS.forEach(k=>{if(S[k]!==undefined)o[k]=S[k];});
@@ -5956,11 +5956,17 @@ const ST_EXP={
   cabecera:'#0B6B5F'
 };
 
-/* Escala del PNG. 3× sobre una hoja de 1400 pt son 4200 px de ancho, de sobra
-   para imprimir o para insertar en una presentación. */
-const ST_ESCALAS=[{v:2,n:'Estándar'},{v:3,n:'Alta'},{v:4,n:'Máxima'}];
-function stEscala(){const v=parseInt(S.stScale,10);return ST_ESCALAS.some(x=>x.v===v)?v:3;}
-function stSetEscala(v){S.stScale=parseInt(v,10)||3;save();renderMain();}
+/* Calidad de exportación en ppp (puntos por pulgada). La hoja mide 1400 pt y se
+   imprime a 297 mm (A4 apaisado, el mismo ancho que usa el PDF), así que
+   px = ppp × 297/25,4 y la escala del lienzo sale de dividir por los 1400 pt. */
+const ST_DPI=[{v:200,n:'200 ppp',d:'Pantalla y presentaciones'},{v:300,n:'300 ppp',d:'Impresión estándar'},{v:600,n:'600 ppp',d:'Calidad de publicación'}];
+const ST_HOJA_PT=1400, ST_HOJA_IN=297/25.4;
+/* Límites prácticos de un lienzo: lado y área máximos que los navegadores aceptan. */
+const ST_CV_LADO=16000, ST_CV_AREA=170e6;
+function stDpi(){const v=parseInt(S.stDpi,10);return ST_DPI.some(x=>x.v===v)?v:300;}
+function stSetDpi(v){S.stDpi=parseInt(v,10)||300;save();renderMain();}
+function stEscalaDe(dpi){return dpi*ST_HOJA_IN/ST_HOJA_PT;}
+function stAnchoPx(dpi){return Math.round(ST_HOJA_PT*stEscalaDe(dpi));}
 function stList(){if(!Array.isArray(S.strategies))S.strategies=[];return S.strategies;}
 function stGet(id){return stList().find(x=>x.id===(id||V.stid))||null;}
 function stMigrate(){
@@ -6380,11 +6386,11 @@ function stViewEdit(e){
       <div class="rp-card">
         <div class="cfg-row cfg-block"><div class="cfg-txt"><b>${ic('export',15)} Exportar</b><span>El PDF incrusta exactamente la misma hoja que el PNG, así que el contenido es idéntico. La estrategia de gating ocupa el lugar principal y no depende del tema de la app.</span></div></div>
         <div class="cfg-row">
-          <div class="cfg-txt"><b>Resolución del PNG</b><span>Ancho resultante: ${1400*stEscala()} px.</span></div>
-          <div class="seg">${ST_ESCALAS.map(x=>`<button class="seg-btn${stEscala()===x.v?' on':''}" onclick="stSetEscala(${x.v})">${x.n} · ${x.v}×</button>`).join('')}</div>
+          <div class="cfg-txt"><b>Calidad de exportación</b><span>${ST_DPI.find(x=>x.v===stDpi()).d}. Ancho resultante: ${stAnchoPx(stDpi())} px (A4 apaisado). Vale para PNG y PDF.</span></div>
+          <div class="seg">${ST_DPI.map(x=>`<button class="seg-btn${stDpi()===x.v?' on':''}" onclick="stSetDpi(${x.v})">${x.n}</button>`).join('')}</div>
         </div>
         <div class="cfg-row">
-          <div class="cfg-txt"><b>Descargar</b><span>PNG para insertar en una presentación; PDF con la página ajustada a la hoja (hasta 3× de resolución).</span></div>
+          <div class="cfg-txt"><b>Descargar</b><span>PNG para insertar en una presentación; PDF con la página ajustada a la hoja. Ambos a la calidad elegida (a 600 ppp pesan bastante).</span></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-g" onclick="stExportPng('${e.id}')">${ic('image',16)} PNG</button>
             <button class="btn btn-p" onclick="stExportPdf('${e.id}')">${ic('pdf',16)} PDF</button>
@@ -6432,9 +6438,10 @@ function stReticula(n,anchoUtil,flecha,ejeY,etiqX){
 /* ── PNG: se dibuja en un lienzo, con el alto ajustado al contenido ── */
 async function stExportPng(id){
   const e=stGet(id);if(!e)return;
-  toast('Generando PNG a '+stEscala()+'×…',{icon:'image',duration:3000});
+  toast('Generando PNG a '+stDpi()+' ppp…',{icon:'image',duration:3000});
   try{
-    const lienzo=await stDibujar(e,stEscala());
+    const lienzo=await stDibujar(e,stEscalaDe(stDpi()));
+    if(lienzo.limitado)toast('La hoja es muy grande: se exportó a '+lienzo.ppp+' ppp (límite del navegador).',{icon:'alert',duration:6000});
     const blob=await new Promise(r=>lienzo.toBlob(r,'image/png'));
     if(!blob)throw new Error('sin blob');
     const bytes=new Uint8Array(await blob.arrayBuffer());
@@ -6490,7 +6497,13 @@ async function stDibujar(e,escala){
   const H=cabH+(gatingH?gatingH+22:12)+bloqueH+(notasH?notasH+18:0)+M*2-10;
 
   /* ── Dibujo ── */
+  /* A 600 ppp la hoja puede superar lo que el navegador dibuja: si pasa, se baja
+     la escala justo lo necesario y se avisa (cv.escalaReal / cv.limitado). */
+  const pedida=escala;
+  escala=Math.min(escala,ST_CV_LADO/Math.max(W,H),Math.sqrt(ST_CV_AREA/(W*H)));
   const cv=document.createElement('canvas');
+  cv.limitado=escala<pedida-1e-6;
+  cv.ppp=Math.round(escala*ST_HOJA_PT/ST_HOJA_IN);
   cv.width=Math.round(W*escala);cv.height=Math.round(H*escala);
   const g=cv.getContext('2d');
   g.imageSmoothingEnabled=true;
@@ -6750,9 +6763,8 @@ function stTabla(g,panel,x,y,w,hCab,hFila){
 }
 
 /* ── PDF: el mismo lienzo del PNG, incrustado a página completa ── */
-/* Por encima de 3× el PDF no gana nada visible al imprimir y sí pesa mucho
-   más, así que ahí se corta. El contenido no cambia: es el mismo dibujo. */
-function stEscalaPdf(){return Math.min(3,stEscala());}
+/* El PDF incrusta el mismo dibujo a los ppp elegidos. */
+function stEscalaPdf(){return stEscalaDe(stDpi());}
 function stPdfHtml(dataUrl,anchoPx,altoPx,titulo){
   /* La página se corta a la medida del lienzo para que no queden márgenes ni
      recortes: el ancho se fija al de un A4 apaisado y el alto sale de la
@@ -6769,9 +6781,10 @@ function stPdfHtml(dataUrl,anchoPx,altoPx,titulo){
 }
 async function stExportPdf(id){
   const e=stGet(id);if(!e)return;
-  toast('Generando PDF…',{icon:'pdf',duration:3000});
+  toast('Generando PDF a '+stDpi()+' ppp…',{icon:'pdf',duration:3000});
   try{
     const cv=await stDibujar(e,stEscalaPdf());
+    if(cv.limitado)toast('La hoja es muy grande: se exportó a '+cv.ppp+' ppp (límite del navegador).',{icon:'alert',duration:6000});
     const dataUrl=cv.toDataURL('image/png');
     const html=stPdfHtml(dataUrl,cv.width,cv.height,stTitle(e));
     const fname=stFileName(e,'pdf');
