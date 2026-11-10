@@ -3686,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.24';
+const APP_VERSION='2.25';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6051,11 +6051,27 @@ function stTituloAdapt(e,f){
   const a=stAdapt(e),t=stNum(f.titer);
   return (a&&t!=null)?t*a.factor:null;
 }
+/* Pequeña tabla de volúmenes de la reacción adaptada: anticuerpos (suma de los
+   títulos adaptados), muestra adaptada y lo que falta hasta el volumen total
+   adaptado. Cada fila sólo sale si se puede calcular. */
+function stVolFilas(e){
+  const a=stAdapt(e);if(!a)return null;
+  let ab=0,n=0;e.panel.forEach(f=>{const v=stTituloAdapt(e,f);if(v!=null){ab+=v;n++;}});
+  if(!n)return null;
+  const filas=[['Volumen total de anticuerpos',ab,0]];
+  if(a.volM!=null)filas.push(['Volumen de muestra adaptado',a.volM,0]);
+  if(a.volM!=null&&a.volT!=null)filas.push(['Volumen restante hasta el total',a.volT-a.volM-ab,1]);
+  if(a.volT!=null)filas.push(['Volumen total adaptado',a.volT,2]);
+  return filas.length>1?filas:null;
+}
+function stVolHtml(e){
+  const f=stVolFilas(e);if(!f)return '';
+  return '<table class="rp-table" style="width:auto;margin:0 0 14px"><tbody>'+f.map(r=>'<tr><td style="padding:3px 14px 3px 2px;'+(r[2]===2?'font-weight:700':'')+'">'+r[0]+'</td><td style="text-align:right;padding:3px 2px;font-weight:700'+(r[1]<0?';color:var(--dng,#D64545)':'')+'">'+stFmtD(r[1],1)+' µL</td></tr>').join('')+'</tbody></table>';
+}
 function stAdaptTxt(e){
   const a=stAdapt(e);
   if(!a)return 'Rellena «Optimizado para», WBC y volumen total para recalcular los títulos.';
-  return 'Células tras el procesamiento: <b>'+stFmtD(a.finalM,2)+'×10⁶</b> (pérdida '+stFmtD(a.perd,1)+' %). Los títulos y volúmenes se multiplican por <b>'+stFmtD(a.factor,3)+'</b>.'
-    +(a.volM!=null?' Volumen de muestra adaptado: <b>'+stFmtD(a.volM,1)+' µL</b>.':'')+(a.volT!=null?' Volumen total adaptado: <b>'+stFmtD(a.volT,1)+' µL</b>.':'');
+  return 'Células tras el procesamiento: <b>'+stFmtD(a.finalM,2)+'×10⁶</b> (pérdida '+stFmtD(a.perd,1)+' %). Los títulos y volúmenes se multiplican por <b>'+stFmtD(a.factor,3)+'</b>.';
 }
 function stAdaptRefresh(){
   const e=stGet();if(!e)return;
@@ -6064,6 +6080,7 @@ function stAdaptRefresh(){
     td.textContent=v==null?'—':stFmtD(v,1);
   });
   const k=document.getElementById('stAdaptInfo');if(k)k.innerHTML=stAdaptTxt(e);
+  const kv=document.getElementById('stAdaptVol');if(kv)kv.innerHTML=stVolHtml(e);
 }
 function stCalcTxt(e){
   const c=stCalc(e);
@@ -6476,7 +6493,8 @@ function stViewEdit(e){
           <div class="mfld"><label class="mlbl"><span>Volumen total de los títulos estándar (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volT)}" placeholder="400" onchange="stSet('volT',this.value)"></div>
           <div class="mfld"><label class="mlbl"><span>Volumen de muestra optimizado (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volM)}" placeholder="100" onchange="stSet('volM',this.value)"></div>
         </div>
-        <p class="sub" id="stAdaptInfo" style="margin:0 2px 14px">${stAdaptTxt(e)}</p>
+        <p class="sub" id="stAdaptInfo" style="margin:0 2px 10px">${stAdaptTxt(e)}</p>
+        <div id="stAdaptVol">${stVolHtml(e)}</div>
         <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título estándar (<span class="no-up">µ</span>L)</th><th>Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       </div>
     </div>
@@ -6631,8 +6649,10 @@ async function stDibujar(e,escala,extra){
   const pan=stPanelOrdenado(e.panel);
   const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
-  const adVol=adOn&&(adInfo.volM!=null||adInfo.volT!=null);
-  const notaAdH=adOn?(adVol?42:22):0;
+  const volFilas=adOn?stVolFilas(e):null;
+  const adVol=!!volFilas;
+  const volRowH=21;
+  const notaAdH=adOn?(adVol?22+volFilas.length*volRowH+14:22):0;
   const tablaH=34+tablaCab+filasPorCol*filaAlt+10+notaAdH;
 
   /* El texto del fenotipo se mide de verdad para no cortarlo. */
@@ -6741,11 +6761,19 @@ async function stDibujar(e,escala,extra){
     const tx='Estándar para '+stFmtD(adInfo.opt,2)+'×10⁶ células · adaptado a '+stFmtD(adInfo.finalM,2)+'×10⁶ células'+(adInfo.perd>0?' (con '+stFmtD(adInfo.perd,1)+' % de pérdida)':'');
     g.fillText(stRecortar(g,tx,colIzq),M,yn);
     if(adVol){
-      const partes=[];
-      if(adInfo.volM!=null)partes.push('Volumen de muestra adaptado: '+stFmtD(adInfo.volM,1)+' µL (de '+stFmtD(adInfo.volM0,1)+' µL)');
-      if(adInfo.volT!=null)partes.push('Volumen total adaptado: '+stFmtD(adInfo.volT,1)+' µL (de '+stFmtD(adInfo.volT0,1)+' µL)');
-      g.fillStyle=P.marca3;g.font='700 14px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(stRecortar(g,partes.join('  ·  '),colIzq),M,yn+19);
+      const bx=M, by=yn+22, bw=Math.min(colIzq,400);
+      stRect(g,bx,by,bw,volFilas.length*volRowH+6,10);
+      g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
+      volFilas.forEach((r,k)=>{
+        const ry=by+3+k*volRowH, fuerte=r[2]===2;
+        g.textAlign='left';g.fillStyle=fuerte?P.marca3:P.tinta2;
+        g.font=(fuerte?'800 ':'600 ')+'13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+        g.fillText(r[0],bx+14,ry+4);
+        g.textAlign='right';g.fillStyle=r[1]<0?'#C0392B':(fuerte?P.marca3:P.tinta);
+        g.font='800 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+        g.fillText(stFmtD(r[1],1)+' µL',bx+bw-14,ry+4);
+        g.textAlign='left';
+      });
     }
   }
 
