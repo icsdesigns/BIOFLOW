@@ -3686,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.23';
+const APP_VERSION='2.24';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6291,14 +6291,22 @@ function stStepSet(id,campo,valor){
 }
 
 /* ── Mix de anticuerpos ── */
-/* Orden por fluorocromo, de menor a mayor (alfanumérico natural: BV421 antes
-   que BV510). Los marcadores sin fluorocromo quedan al final, en su orden. */
+/* Orden de los anticuerpos con fluorocromo: por título (µL) de menor a mayor.
+   El título adaptado es el estándar por un mismo factor, así que el orden es el
+   mismo en las dos columnas. Los títulos que no son un número y los marcadores
+   sin fluorocromo quedan al final, en su orden. */
 function stPanelOrdenado(panel){
-  const con=panel.filter(f=>(f.fluor||'').trim()),sin=panel.filter(f=>!(f.fluor||'').trim());
-  con.sort((a,b)=>a.fluor.trim().localeCompare(b.fluor.trim(),'es',{numeric:true,sensitivity:'base'}));
-  return con.concat(sin);
+  const idx=panel.map((f,k)=>({f,k,t:stNum(f.titer),c:!!(f.fluor||'').trim()}));
+  const ord=(a,b)=>{
+    if(a.c!==b.c)return a.c?-1:1;
+    if(!a.c)return a.k-b.k;
+    if((a.t==null)!==(b.t==null))return a.t==null?1:-1;
+    if(a.t!==b.t&&a.t!=null)return a.t-b.t;
+    return a.k-b.k;
+  };
+  return idx.sort(ord).map(x=>x.f);
 }
-function stPanelSortFluor(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por fluorocromo',{icon:'sheet'});}
+function stPanelSortTitulo(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por título',{icon:'sheet'});}
 function stPanelAdd(){const e=stGet();if(!e)return;e.panel.push({marker:'',fluor:'',titer:''});save();stRender();}
 function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();if(campo==='titer')stAdaptRefresh();}
 function stPanelDel(i){const e=stGet();if(!e)return;e.panel.splice(i,1);save();stRender();}
@@ -6461,7 +6469,7 @@ function stViewEdit(e){
       <div class="rp-card">
         <label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
         <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
-        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortFluor()" title="Ordena las filas por fluorocromo, de menor a mayor">${ic('arrow-down',14)} Ordenar por fluorocromo</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
+        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena los anticuerpos con fluorocromo por título, de menor a mayor">${ic('arrow-down',14)} Ordenar por título</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
         <div class="rp-grid" style="margin-bottom:4px">
           <div class="mfld"><label class="mlbl"><span>Título optimizado para (millones de células)</span></label><input class="minp" inputmode="decimal" value="${esc(e.optM)}" placeholder="15" onchange="stSet('optM',this.value)"></div>
           <div class="mfld"><label class="mlbl"><span>Pérdida estimada en el procesamiento (%)</span></label><input class="minp" inputmode="decimal" value="${esc(e.loss)}" placeholder="30" onchange="stSet('loss',this.value)"></div>
