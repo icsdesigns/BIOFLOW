@@ -3686,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.21';
+const APP_VERSION='2.22';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -5980,6 +5980,8 @@ function stMigrate(){
     if(typeof e.wbc!=='string')e.wbc='';
     if(typeof e.vol!=='string')e.vol='';
     if(typeof e.optM!=='string')e.optM='';
+    if(typeof e.volT!=='string')e.volT='400';
+    if(typeof e.volM!=='string')e.volM='100';
     if(typeof e.loss!=='string')e.loss='';
     if(typeof e.notes!=='string')e.notes='';
     if(!Array.isArray(e.steps))e.steps=[];
@@ -6002,7 +6004,7 @@ function stMigrate(){
   });
 }
 /* ── Recuento celular ──
-   WBC (células/µL) y volumen total (µL) son opcionales. Leucocitos totales =
+   WBC (células/µL) y volumen total (µL) son opcionales. WBC totales =
    WBC × volumen; células de interés = % de la población × leucocitos totales.
    Lo que no se rellena no sale en el documento ni se calcula. */
 function stNum(s){
@@ -6042,7 +6044,8 @@ function stAdapt(e){
   if(c.total==null||!opt||opt<=0)return null;
   const p=Math.min(100,perd||0);
   const finalM=c.total*(1-p/100)/1e6;
-  return {opt,perd:p,finalM,factor:finalM/opt};
+  const factor=finalM/opt,vt=stNum(e.volT),vm=stNum(e.volM);
+  return {opt,perd:p,finalM,factor,volT:vt!=null?vt*factor:null,volM:vm!=null?vm*factor:null,volT0:vt,volM0:vm};
 }
 function stTituloAdapt(e,f){
   const a=stAdapt(e),t=stNum(f.titer);
@@ -6051,20 +6054,21 @@ function stTituloAdapt(e,f){
 function stAdaptTxt(e){
   const a=stAdapt(e);
   if(!a)return 'Rellena «Optimizado para», WBC y volumen total para recalcular los títulos.';
-  return 'Células tras el procesamiento: <b>'+stFmtD(a.finalM,2)+'×10⁶</b> (pérdida '+stFmtD(a.perd,1)+' %). Los títulos se multiplican por <b>'+stFmtD(a.factor,3)+'</b>.';
+  return 'Células tras el procesamiento: <b>'+stFmtD(a.finalM,2)+'×10⁶</b> (pérdida '+stFmtD(a.perd,1)+' %). Los títulos y volúmenes se multiplican por <b>'+stFmtD(a.factor,3)+'</b>.'
+    +(a.volM!=null?' Volumen de muestra adaptado: <b>'+stFmtD(a.volM,1)+' µL</b>.':'')+(a.volT!=null?' Volumen total adaptado: <b>'+stFmtD(a.volT,1)+' µL</b>.':'');
 }
 function stAdaptRefresh(){
   const e=stGet();if(!e)return;
   document.querySelectorAll('[data-adapt]').forEach(td=>{
     const f=e.panel[+td.dataset.adapt];const v=f?stTituloAdapt(e,f):null;
-    td.textContent=v==null?'—':stFmtD(v,2);
+    td.textContent=v==null?'—':stFmtD(v,1);
   });
   const k=document.getElementById('stAdaptInfo');if(k)k.innerHTML=stAdaptTxt(e);
 }
 function stCalcTxt(e){
   const c=stCalc(e);
-  if(c.total==null)return 'Rellena WBC y volumen total para calcular los leucocitos totales.';
-  let t='Leucocitos totales: <b>'+stFmtN(c.total)+'</b>';
+  if(c.total==null)return 'Rellena WBC y volumen total para calcular los WBC totales.';
+  let t='WBC totales: <b>'+stFmtN(c.total)+'</b>';
   if(c.interes!=null)t+=' · Células de interés: <b>'+stFmtN(c.interes)+'</b>';
   else t+=' · Con el % aproximado se calculan también las células de interés.';
   return t;
@@ -6076,7 +6080,7 @@ function stHome(){V.area='strategies';S.area='strategies';V.stpage='home';V.stid
 function stOpen(id){if(!stGet(id))return;V.area='strategies';S.area='strategies';V.stpage='edit';V.stid=id;S.lastStid=id;save();closeDrawer();renderAll();if(isMobile()&&!S.sideOff){S.sideOff=true;applySide();}}
 function stNew(){
   const e={id:uid(),name:uniqueName('Nueva estrategia',stList().map(x=>x.name),'Nueva estrategia'),population:'',
-    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',optM:'',loss:'',notes:'',createdAt:new Date().toISOString()};
+    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',optM:'',loss:'',volT:'400',volM:'100',notes:'',createdAt:new Date().toISOString()};
   stList().unshift(e);save();stOpen(e.id);toast('Estrategia creada',{icon:'circle-check'});
 }
 function stDuplicate(id){
@@ -6105,7 +6109,7 @@ function stSet(campo,valor){
     renderSidebar();
   }
   if(campo==='wbc'||campo==='vol'||campo==='pct'){const k=document.getElementById('stCalc');if(k)k.innerHTML=stCalcTxt(e);}
-  if(['wbc','vol','optM','loss'].includes(campo))stAdaptRefresh();
+  if(['wbc','vol','optM','loss','volT','volM'].includes(campo))stAdaptRefresh();
 }
 /* Repintado del editor sin animación de entrada y conservando el desplazamiento. */
 let _stQuiet=false;
@@ -6287,6 +6291,14 @@ function stStepSet(id,campo,valor){
 }
 
 /* ── Mix de anticuerpos ── */
+/* Orden por fluorocromo, de menor a mayor (alfanumérico natural: BV421 antes
+   que BV510). Los marcadores sin fluorocromo quedan al final, en su orden. */
+function stPanelOrdenado(panel){
+  const con=panel.filter(f=>(f.fluor||'').trim()),sin=panel.filter(f=>!(f.fluor||'').trim());
+  con.sort((a,b)=>a.fluor.trim().localeCompare(b.fluor.trim(),'es',{numeric:true,sensitivity:'base'}));
+  return con.concat(sin);
+}
+function stPanelSortFluor(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por fluorocromo',{icon:'sheet'});}
 function stPanelAdd(){const e=stGet();if(!e)return;e.panel.push({marker:'',fluor:'',titer:''});save();stRender();}
 function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();if(campo==='titer')stAdaptRefresh();}
 function stPanelDel(i){const e=stGet();if(!e)return;e.panel.splice(i,1);save();stRender();}
@@ -6408,7 +6420,7 @@ function stViewEdit(e){
       <td><input class="rp-cell" value="${esc(f.marker)}" placeholder="CD45" onchange="stPanelSet(${i},'marker',this.value)"></td>
       <td><input class="rp-cell" value="${esc(f.fluor)}" placeholder="PerCP" onchange="stPanelSet(${i},'fluor',this.value)"></td>
       <td><input class="rp-cell" value="${esc(f.titer)}" placeholder="1.5" onchange="stPanelSet(${i},'titer',this.value)"></td>
-      <td class="st-adapt" data-adapt="${i}">${(()=>{const v=stTituloAdapt(e,f);return v==null?'—':stFmtD(v,2);})()}</td>
+      <td class="st-adapt" data-adapt="${i}">${(()=>{const v=stTituloAdapt(e,f);return v==null?'—':stFmtD(v,1);})()}</td>
       <td class="rp-rowacts">
         <button class="sc-ibtn" title="Subir" ${i===0?'disabled':''} onclick="stPanelMove(${i},-1)">${ic('arrow-up',15)}</button>
         <button class="sc-ibtn" title="Bajar" ${i===e.panel.length-1?'disabled':''} onclick="stPanelMove(${i},1)">${ic('arrow-down',15)}</button>
@@ -6449,13 +6461,15 @@ function stViewEdit(e){
       <div class="rp-card">
         <label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
         <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
-        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
+        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortFluor()" title="Ordena las filas por fluorocromo, de menor a mayor">${ic('arrow-down',14)} Ordenar por fluorocromo</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
         <div class="rp-grid" style="margin-bottom:4px">
           <div class="mfld"><label class="mlbl"><span>Título optimizado para (millones de células)</span></label><input class="minp" inputmode="decimal" value="${esc(e.optM)}" placeholder="15" onchange="stSet('optM',this.value)"></div>
           <div class="mfld"><label class="mlbl"><span>Pérdida estimada en el procesamiento (%)</span></label><input class="minp" inputmode="decimal" value="${esc(e.loss)}" placeholder="30" onchange="stSet('loss',this.value)"></div>
+          <div class="mfld"><label class="mlbl"><span>Volumen total de los títulos estándar (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volT)}" placeholder="400" onchange="stSet('volT',this.value)"></div>
+          <div class="mfld"><label class="mlbl"><span>Volumen de muestra optimizado (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volM)}" placeholder="100" onchange="stSet('volM',this.value)"></div>
         </div>
         <p class="sub" id="stAdaptInfo" style="margin:0 2px 14px">${stAdaptTxt(e)}</p>
-        <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título (<span class="no-up">µ</span>L)</th><th>Adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+        <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título estándar (<span class="no-up">µ</span>L)</th><th>Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       </div>
     </div>
 
@@ -6591,9 +6605,11 @@ async function stDibujar(e,escala){
   const filasPorCol=dosCol?Math.ceil(e.panel.length/2):Math.max(1,e.panel.length);
   /* Título adaptado: sólo sale si se puede calcular para algún anticuerpo. */
   const adInfo=stAdapt(e);
-  const adList=e.panel.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,2);});
+  const pan=stPanelOrdenado(e.panel);
+  const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
-  const notaAdH=adOn?26:0;
+  const adVol=adOn&&(adInfo.volM!=null||adInfo.volT!=null);
+  const notaAdH=adOn?(adVol?50:26):0;
   const tablaH=40+tablaCab+filasPorCol*filaAlt+18+notaAdH;
 
   /* El texto del fenotipo se mide de verdad para no cortarlo. */
@@ -6611,7 +6627,7 @@ async function stDibujar(e,escala){
   const recLin=[];
   if(cc.wbc!=null)recLin.push(['WBC','células/µL',stFmtN(cc.wbc),0]);
   if(cc.vol!=null)recLin.push(['Volumen total','µL',stFmtN(cc.vol),0]);
-  if(cc.total!=null)recLin.push(['Leucocitos totales','',stFmtN(cc.total),1]);
+  if(cc.total!=null)recLin.push(['WBC totales','',stFmtN(cc.total),1]);
   if(cc.interes!=null)recLin.push(['Células de interés','',stFmtN(cc.interes),2]);
   /* Franja a todo el ancho bajo las dos columnas: así sólo suma una fila de
      alto y la figura de gating conserva su tamaño. */
@@ -6685,10 +6701,10 @@ async function stDibujar(e,escala){
   stTituloSeccion(g,'MIX DE ANTICUERPOS',M,y,colIzq);
   if(dosCol){
     const hueco=16, sub=(colIzq-hueco)/2, mitad=Math.ceil(e.panel.length/2);
-    stTabla(g,e.panel.slice(0,mitad),M,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(0,mitad):null);
-    stTabla(g,e.panel.slice(mitad),M+sub+hueco,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(mitad):null);
+    stTabla(g,pan.slice(0,mitad),M,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(0,mitad):null);
+    stTabla(g,pan.slice(mitad),M+sub+hueco,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(mitad):null);
   }else{
-    stTabla(g,e.panel,M,y+34,colIzq,tablaCab,filaAlt,adOn?adList:null);
+    stTabla(g,pan,M,y+34,colIzq,tablaCab,filaAlt,adOn?adList:null);
   }
   if(adOn){
     const yn=y+34+tablaCab+filasPorCol*filaAlt+10;
@@ -6696,6 +6712,13 @@ async function stDibujar(e,escala){
     g.font='400 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     const tx='Estándar para '+stFmtD(adInfo.opt,2)+'×10⁶ células · adaptado a '+stFmtD(adInfo.finalM,2)+'×10⁶ células'+(adInfo.perd>0?' (con '+stFmtD(adInfo.perd,1)+' % de pérdida)':'');
     g.fillText(stRecortar(g,tx,colIzq),M,yn);
+    if(adVol){
+      const partes=[];
+      if(adInfo.volM!=null)partes.push('Volumen de muestra adaptado: '+stFmtD(adInfo.volM,1)+' µL (de '+stFmtD(adInfo.volM0,1)+' µL)');
+      if(adInfo.volT!=null)partes.push('Volumen total adaptado: '+stFmtD(adInfo.volT,1)+' µL (de '+stFmtD(adInfo.volT0,1)+' µL)');
+      g.fillStyle=P.marca3;g.font='700 14px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+      g.fillText(stRecortar(g,partes.join('  ·  '),colIzq),M,yn+22);
+    }
   }
 
   /* Fenotipo y porcentaje */
@@ -6894,9 +6917,10 @@ function stTabla(g,panel,x,y,w,hCab,hFila,ad){
   g.fillStyle=P.tinta2;
   g.font='800 '+fCab+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   g.fillText('MARCADOR',c1,y+11);
-  g.fillText(ad&&estrecha?'FLUOROCR.':'FLUOROCROMO',c2,y+11);
-  g.textAlign='right';g.fillText(ad?(estrecha?'TÍTULO µL':'TÍTULO (µL)'):(estrecha?'µL':'TÍTULO (µL)'),c3,y+11);
-  if(ad){g.fillStyle=P.marca3;g.fillText(estrecha?'ADAPTADO µL':'ADAPTADO (µL)',c4,y+11);}
+  g.fillText(ad&&estrecha?'FLUOR.':'FLUOROCROMO',c2,y+11);
+  g.textAlign='right';
+  g.fillText('TÍTULO',c3,y+5);g.fillText('ESTÁNDAR (µL)',c3,y+17);
+  if(ad){g.fillStyle=P.marca3;g.fillText('TÍTULO',c4,y+5);g.fillText('ADAPTADO (µL)',c4,y+17);}
   g.textAlign='left';
   /* Filas, con bandas alternas para seguir la línea con la vista */
   filas.forEach((f,i)=>{
