@@ -3686,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.22';
+const APP_VERSION='2.23';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6510,9 +6510,9 @@ function stAltoGating(n){return 700+Math.min(n,10)*34;}
 const ST_RATIO=1;      // alto/ancho de cada captura: cuadrada, como un dot plot
 const ST_HUECO_FILA=34; // espacio entre filas, donde cabe la flecha de bajada
 /* Elige el reparto en filas que deja la captura lo más ancha posible. */
-function stReticula(n,anchoUtil,flecha,ejeY,etiqX){
+function stReticula(n,anchoUtil,flecha,ejeY,etiqX,extra){
   if(n<=0)return {porFila:1,filas:0,celda:anchoUtil,anchoImg:0,altoImg:0};
-  const maxH=stAltoGating(n);
+  const maxH=stAltoGating(n)+(extra||0);
   let mejor=null;
   for(let pf=1;pf<=Math.min(n,6);pf++){
     const filas=Math.ceil(n/pf);
@@ -6554,15 +6554,30 @@ async function stExportPng(id){
    que la escala por ppp es la misma que en stEscalaDe. */
 const ST_A4_LARGO=ST_HOJA_PT, ST_A4_CORTO=Math.round(ST_HOJA_PT/Math.SQRT2);
 async function stDibujarA4(e,escala){
-  const sonda=await stDibujar(e,0.1);
-  const W=sonda.wPt,H=sonda.hPt;
-  const fH=Math.min(1,ST_A4_CORTO/H,ST_A4_LARGO/W);          // apaisada
-  const fV=Math.min(ST_A4_CORTO/W,ST_A4_LARGO/H);            // vertical
-  const apaisada=fH>=fV, f=apaisada?fH:fV;
+  let sonda=await stDibujar(e,0.1);
+  let W=sonda.wPt,H=sonda.hPt;
+  const orient=(W,H)=>{
+    const fH=Math.min(1,ST_A4_CORTO/H,ST_A4_LARGO/W);          // apaisada
+    const fV=Math.min(ST_A4_CORTO/W,ST_A4_LARGO/H);            // vertical
+    const apaisada=fH>=fV;return {apaisada,f:apaisada?fH:fV};
+  };
+  let {apaisada,f}=orient(W,H),extra=0;
+  /* Si sobra alto en la hoja, el gating lo aprovecha: se vuelve a repartir con
+     más altura y se queda con el resultado si no obliga a encoger el dibujo. */
+  if(e.steps.some(p=>p.img||p.x||p.y)){
+    const hoja=(apaisada?ST_A4_CORTO:ST_A4_LARGO)/f;
+    let libre=hoja-H;
+    for(let k=0;k<4&&libre>40;k++){
+      const s2=await stDibujar(e,0.1,libre);
+      const o2=orient(s2.wPt,s2.hPt);
+      if(o2.apaisada===apaisada&&o2.f>=f-1e-6&&s2.hPt>H+1){sonda=s2;W=s2.wPt;H=s2.hPt;f=o2.f;extra=libre;break;}
+      libre*=0.8;
+    }
+  }
   const pw=apaisada?ST_A4_LARGO:ST_A4_CORTO, ph=apaisada?ST_A4_CORTO:ST_A4_LARGO;
   const pedida=escala;
   escala=Math.min(escala,ST_CV_LADO/ST_A4_LARGO,Math.sqrt(ST_CV_AREA/(pw*ph)));
-  const cont=await stDibujar(e,escala*f);
+  const cont=await stDibujar(e,escala*f,extra);
   const pag=document.createElement('canvas');
   pag.width=Math.round(pw*escala);pag.height=Math.round(ph*escala);
   const g=pag.getContext('2d');
@@ -6574,7 +6589,7 @@ async function stDibujarA4(e,escala){
   pag.apaisada=apaisada;
   return pag;
 }
-async function stDibujar(e,escala){
+async function stDibujar(e,escala,extra){
   const P=ST_EXP;
   const W=1400;                      // ancho en puntos
   const M=46;                        // margen
@@ -6587,7 +6602,7 @@ async function stDibujar(e,escala){
   const hayY=pasos.some(p=>(p.y||'').trim());
   const hayX=pasos.some(p=>(p.x||'').trim());
   const flecha=34, ejeY=hayY?32:0, etiqX=hayX?32:0;
-  const rej=stReticula(pasos.length,anchoUtil,flecha,ejeY,etiqX);
+  const rej=stReticula(pasos.length,anchoUtil,flecha,ejeY,etiqX,extra);
   const porFila=rej.porFila, altoImg=rej.altoImg, filas=rej.filas;
   const celda=rej.anchoImg+ejeY;
   const altoCelda=altoImg+etiqX+10;
@@ -6595,12 +6610,12 @@ async function stDibujar(e,escala){
   const anchoFila=porFila*celda+flecha*(porFila-1);
   const sangrado=Math.max(0,(anchoUtil-anchoFila)/2);
 
-  const cabH=104;
+  const cabH=84;
   const gatingH=pasos.length?(40+filas*altoCelda+(filas-1)*ST_HUECO_FILA+22):0;
 
   /* Columna izquierda: tabla. Derecha: fenotipo y porcentaje. */
   const colIzq=Math.round(anchoUtil*0.54), colDer=anchoUtil-colIzq-24;
-  const filaAlt=27, tablaCab=32;
+  const filaAlt=25, tablaCab=30;
   const dosCol=e.panel.length>10;
   const filasPorCol=dosCol?Math.ceil(e.panel.length/2):Math.max(1,e.panel.length);
   /* Título adaptado: sólo sale si se puede calcular para algún anticuerpo. */
@@ -6609,18 +6624,17 @@ async function stDibujar(e,escala){
   const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
   const adVol=adOn&&(adInfo.volM!=null||adInfo.volT!=null);
-  const notaAdH=adOn?(adVol?50:26):0;
-  const tablaH=40+tablaCab+filasPorCol*filaAlt+18+notaAdH;
+  const notaAdH=adOn?(adVol?42:22):0;
+  const tablaH=34+tablaCab+filasPorCol*filaAlt+10+notaAdH;
 
   /* El texto del fenotipo se mide de verdad para no cortarlo. */
   const medidor=document.createElement('canvas').getContext('2d');
-  medidor.font='700 27px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  const lineasFeno=stPartir(medidor,e.phenotype||'—',colDer-52);
-  const fenoH=40+Math.max(60,lineasFeno.length*36+26);
-  const pctH=e.pct?136:0;   // título de sección (34) + recuadro (84) + aire
-  medidor.font='400 17px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+  medidor.font='700 22px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+  const lineasFeno=stPartir(medidor,e.phenotype||'—',colDer-40);
+  const fenoBox=Math.max(46,lineasFeno.length*29+18);
+  medidor.font='400 16px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   const lineasNotas=e.notes?stPartir(medidor,e.notes,anchoUtil-40):[];
-  const notasH=lineasNotas.length?(28+lineasNotas.length*24+18):0;
+  const notasH=lineasNotas.length?(22+lineasNotas.length*22+10):0;
 
   /* Recuento celular: sólo las líneas que el usuario ha rellenado. */
   const cc=stCalc(e);
@@ -6629,11 +6643,17 @@ async function stDibujar(e,escala){
   if(cc.vol!=null)recLin.push(['Volumen total','µL',stFmtN(cc.vol),0]);
   if(cc.total!=null)recLin.push(['WBC totales','',stFmtN(cc.total),1]);
   if(cc.interes!=null)recLin.push(['Células de interés','',stFmtN(cc.interes),2]);
-  /* Franja a todo el ancho bajo las dos columnas: así sólo suma una fila de
-     alto y la figura de gating conserva su tamaño. */
-  const recH=recLin.length?(34+68+18):0;
-  const bloqueH=Math.max(tablaH,fenoH+(pctH?pctH+18:0));
-  const H=cabH+(gatingH?gatingH+22:12)+bloqueH+recH+(notasH?notasH+18:0)+M*2-10;
+  /* Resultados: % de la población y recuento, en tarjetas de dos en dos bajo el
+     fenotipo. Así la columna derecha se iguala con la tabla y no hace falta una
+     franja extra que robe alto a los gates. */
+  const tarjetas=[];
+  if(e.pct)tarjetas.push(['% aproximado','',e.pct+(/%$/.test(e.pct)?'':' %'),3]);
+  recLin.forEach(l=>tarjetas.push(l));
+  const tarH=50, tarGap=10;
+  const tarSecH=tarjetas.length?(34+Math.ceil(tarjetas.length/2)*(tarH+tarGap)-tarGap):0;
+  const derH=34+fenoBox+(tarSecH?16+tarSecH:0);
+  const bloqueH=Math.max(tablaH,derH)+10;
+  const H=cabH+(gatingH?gatingH+22:12)+bloqueH+(notasH?notasH+8:0)+M*2-10;
 
   /* ── Dibujo ── */
   /* A 600 ppp la hoja puede superar lo que el navegador dibuja: si pasa, se baja
@@ -6654,15 +6674,15 @@ async function stDibujar(e,escala){
   /* Cabecera: banda con degradado de marca y el título dentro */
   const grad=g.createLinearGradient(M,0,W-M,0);
   grad.addColorStop(0,P.marca2);grad.addColorStop(1,P.marca1);
-  stRect(g,M,M,anchoUtil,66,16);g.fillStyle=grad;g.fill();
+  stRect(g,M,M,anchoUtil,54,14);g.fillStyle=grad;g.fill();
   g.fillStyle='#FFFFFF';
-  g.font='800 32px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+  g.font='800 27px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   g.textAlign='left';
-  g.fillText(stTitle(e),M+26,M+16);
+  g.fillText(stTitle(e),M+24,M+12);
   g.font='600 15px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   g.globalAlpha=.9;
   g.textAlign='right';
-  g.fillText('Estrategia de gating · '+new Date().toLocaleDateString('es-ES'),W-M-26,M+24);
+  g.fillText('Estrategia de gating · '+new Date().toLocaleDateString('es-ES'),W-M-24,M+19);
   g.globalAlpha=1;g.textAlign='left';
 
   let y=M+cabH-14;
@@ -6707,7 +6727,7 @@ async function stDibujar(e,escala){
     stTabla(g,pan,M,y+34,colIzq,tablaCab,filaAlt,adOn?adList:null);
   }
   if(adOn){
-    const yn=y+34+tablaCab+filasPorCol*filaAlt+10;
+    const yn=y+34+tablaCab+filasPorCol*filaAlt+8;
     g.fillStyle=P.tinta3;g.textAlign='left';
     g.font='400 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     const tx='Estándar para '+stFmtD(adInfo.opt,2)+'×10⁶ células · adaptado a '+stFmtD(adInfo.finalM,2)+'×10⁶ células'+(adInfo.perd>0?' (con '+stFmtD(adInfo.perd,1)+' % de pérdida)':'');
@@ -6717,63 +6737,49 @@ async function stDibujar(e,escala){
       if(adInfo.volM!=null)partes.push('Volumen de muestra adaptado: '+stFmtD(adInfo.volM,1)+' µL (de '+stFmtD(adInfo.volM0,1)+' µL)');
       if(adInfo.volT!=null)partes.push('Volumen total adaptado: '+stFmtD(adInfo.volT,1)+' µL (de '+stFmtD(adInfo.volT0,1)+' µL)');
       g.fillStyle=P.marca3;g.font='700 14px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(stRecortar(g,partes.join('  ·  '),colIzq),M,yn+22);
+      g.fillText(stRecortar(g,partes.join('  ·  '),colIzq),M,yn+19);
     }
   }
 
-  /* Fenotipo y porcentaje */
+  /* Fenotipo, porcentaje y recuento */
   const xd=M+colIzq+24;
   stTituloSeccion(g,'FENOTIPO DE LA POBLACIÓN',xd,y,colDer);
   const yFeno=y+34;
-  stRect(g,xd,yFeno,colDer,fenoH-40,14);
+  stRect(g,xd,yFeno,colDer,fenoBox,12);
   g.fillStyle=P.panel;g.fill();
   g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
   g.fillStyle=P.marca3;
-  g.font='700 27px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  lineasFeno.forEach((l,i)=>g.fillText(l,xd+26,yFeno+20+i*36));
+  g.font='700 22px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+  lineasFeno.forEach((l,i)=>g.fillText(l,xd+20,yFeno+(fenoBox-lineasFeno.length*29)/2+3+i*29));
 
-  if(e.pct){
-    /* Mismo título de sección que «Fenotipo de la población». */
-    const yt=yFeno+(fenoH-40)+22;
-    stTituloSeccion(g,'% APROXIMADO',xd,yt,colDer);
-    const yp=yt+34;
-    stRect(g,xd,yp,colDer,84,14);
-    const gp=g.createLinearGradient(xd,yp,xd+colDer,yp);
-    gp.addColorStop(0,P.marca2);gp.addColorStop(1,P.marca1);
-    g.fillStyle=gp;g.fill();
-    g.fillStyle='#FFFFFF';
-    g.font='800 44px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-    g.fillText(e.pct+(/%$/.test(e.pct)?'':' %'),xd+26,yp+18);
-  }
-
-  /* Recuento celular */
-  if(recLin.length){
-    const yr=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH;
-    stTituloSeccion(g,'RECUENTO CELULAR',M,yr,anchoUtil);
-    const hueco=14, n=recLin.length, wc=Math.min(316,(anchoUtil-hueco*(n-1))/n), y0=yr+34;
-    recLin.forEach((l,i)=>{
-      const x0=M+i*(wc+hueco), fuerte=l[3]===2;
-      stRect(g,x0,y0,wc,68,14);
+  if(tarjetas.length){
+    const yt=yFeno+fenoBox+16;
+    stTituloSeccion(g,e.pct?(recLin.length?'% APROXIMADO Y RECUENTO CELULAR':'% APROXIMADO'):'RECUENTO CELULAR',xd,yt,colDer);
+    const wc=(colDer-tarGap)/2, y0=yt+34;
+    tarjetas.forEach((l,i)=>{
+      const x0=xd+(i%2)*(wc+tarGap), cy=y0+Math.floor(i/2)*(tarH+tarGap);
+      const fuerte=l[3]===2||l[3]===3;
+      stRect(g,x0,cy,wc,tarH,12);
       if(fuerte){
-        const gr=g.createLinearGradient(x0,y0,x0+wc,y0);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);
+        const gr=g.createLinearGradient(x0,cy,x0+wc,cy);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);
         g.fillStyle=gr;g.fill();
       }else{g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();}
       g.textAlign='left';
       g.fillStyle=fuerte?'rgba(255,255,255,.92)':P.tinta2;
-      g.font='700 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(l[0].toUpperCase()+(l[1]?' ('+l[1]+')':''),x0+20,y0+12);
+      g.font='700 11.5px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+      g.fillText(l[0].toUpperCase()+(l[1]?' ('+l[1]+')':''),x0+16,cy+8);
       g.fillStyle=fuerte?'#FFFFFF':(l[3]===1?P.marca3:P.tinta);
-      g.font='800 28px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(l[2],x0+20,y0+31);
+      g.font='800 23px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+      g.fillText(l[2],x0+16,cy+22);
     });
   }
 
   /* Notas al pie */
   if(lineasNotas.length){
-    const yn=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH+recH+18;
+    const yn=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH+8;
     g.fillStyle=P.tinta2;
-    g.font='400 17px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-    lineasNotas.forEach((l,i)=>g.fillText(l,M,yn+i*24));
+    g.font='400 16px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+    lineasNotas.forEach((l,i)=>g.fillText(l,M,yn+i*22));
   }
   cv.wPt=W;cv.hPt=H;
   return cv;
@@ -6928,15 +6934,15 @@ function stTabla(g,panel,x,y,w,hCab,hFila,ad){
     if(i%2===1){g.fillStyle='rgba(15,40,50,.035)';g.fillRect(x,fy,w,hFila);}
     g.font='650 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     g.fillStyle=P.tinta;
-    g.fillText(stRecortar(g,f.marker||'',c2-c1-10),c1,fy+7);
+    g.fillText(stRecortar(g,f.marker||'',c2-c1-10),c1,fy+5);
     g.font='400 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     g.fillStyle=P.tinta2;
-    g.fillText(stRecortar(g,f.fluor||'',c3-c2-(ad?(estrecha?22:30):44)),c2,fy+7);
+    g.fillText(stRecortar(g,f.fluor||'',c3-c2-(ad?(estrecha?22:30):44)),c2,fy+5);
     g.textAlign='right';
     g.fillStyle=P.tinta;
     g.font='650 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-    g.fillText(f.titer||'',c3,fy+7);
-    if(ad&&ad[i]){g.fillStyle=P.marca3;g.font='800 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';g.fillText(ad[i],c4,fy+7);}
+    g.fillText(f.titer||'',c3,fy+5);
+    if(ad&&ad[i]){g.fillStyle=P.marca3;g.font='800 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';g.fillText(ad[i],c4,fy+5);}
     g.textAlign='left';
   });
   g.restore();
