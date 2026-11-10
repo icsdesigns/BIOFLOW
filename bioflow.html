@@ -3686,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.26';
+const APP_VERSION='2.27';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6059,9 +6059,9 @@ function stVolFilas(e){
   let ab=0,n=0;e.panel.forEach(f=>{const v=stTituloAdapt(e,f);if(v!=null){ab+=v;n++;}});
   if(!n)return null;
   const filas=[['Volumen total de anticuerpos',ab,0]];
-  if(a.volM!=null)filas.push(['Volumen de muestra adaptado',a.volM,0]);
+  if(a.volM!=null)filas.push(['Volumen de muestra para título adaptado',a.volM,0]);
   if(a.volM!=null&&a.volT!=null)filas.push(['Volumen restante hasta el total',a.volT-a.volM-ab,1]);
-  if(a.volT!=null)filas.push(['Volumen total adaptado',a.volT,2]);
+  if(a.volT!=null)filas.push(['Volumen total para título adaptado',a.volT,2]);
   return filas.length>1?filas:null;
 }
 function stVolHtml(e){
@@ -6490,8 +6490,8 @@ function stViewEdit(e){
         <div class="rp-grid" style="margin-bottom:4px">
           <div class="mfld"><label class="mlbl"><span>Título optimizado para (millones de células)</span></label><input class="minp" inputmode="decimal" value="${esc(e.optM)}" placeholder="15" onchange="stSet('optM',this.value)"></div>
           <div class="mfld"><label class="mlbl"><span>Pérdida estimada en el procesamiento (%)</span></label><input class="minp" inputmode="decimal" value="${esc(e.loss)}" placeholder="30" onchange="stSet('loss',this.value)"></div>
-          <div class="mfld"><label class="mlbl"><span>Volumen total de los títulos estándar (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volT)}" placeholder="400" onchange="stSet('volT',this.value)"></div>
-          <div class="mfld"><label class="mlbl"><span>Volumen de muestra optimizado (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volM)}" placeholder="100" onchange="stSet('volM',this.value)"></div>
+          <div class="mfld"><label class="mlbl"><span>Volumen total para los títulos estándar (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volT)}" placeholder="400" onchange="stSet('volT',this.value)"></div>
+          <div class="mfld"><label class="mlbl"><span>Volumen de muestra para título optimizado (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volM)}" placeholder="100" onchange="stSet('volM',this.value)"></div>
         </div>
         <p class="sub" id="stAdaptInfo" style="margin:0 2px 10px">${stAdaptTxt(e)}</p>
         <div id="stAdaptVol">${stVolHtml(e)}</div>
@@ -6509,6 +6509,10 @@ function stViewEdit(e){
     <div class="section">
       <div class="rp-card">
         <div class="cfg-row cfg-block"><div class="cfg-txt"><b>${ic('export',15)} Exportar</b><span>El PDF incrusta exactamente la misma hoja que el PNG, así que el contenido es idéntico. La estrategia de gating ocupa el lugar principal y no depende del tema de la app.</span></div></div>
+        <div class="cfg-row">
+          <div class="cfg-txt"><b>Diseño de la hoja</b><span>${ST_LAYOUTS.find(x=>x.id===stLayout()).d}</span></div>
+          <div class="seg">${ST_LAYOUTS.map(x=>`<button class="seg-btn${stLayout()===x.id?' on':''}" onclick="stSetLayout('${x.id}')">${x.n}</button>`).join('')}</div>
+        </div>
         <div class="cfg-row">
           <div class="cfg-txt"><b>Calidad de exportación</b><span>${ST_DPI.find(x=>x.v===stDpi()).d}. Ancho resultante: ${stAnchoPx(stDpi())} px (A4 apaisado). Vale para PNG y PDF.</span></div>
           <div class="seg">${ST_DPI.map(x=>`<button class="seg-btn${stDpi()===x.v?' on':''}" onclick="stSetDpi(${x.v})">${x.n}</button>`).join('')}</div>
@@ -6579,8 +6583,8 @@ async function stExportPng(id){
    elige sola: la que deje el dibujo más grande. El lado largo mide 1400 pt, así
    que la escala por ppp es la misma que en stEscalaDe. */
 const ST_A4_LARGO=ST_HOJA_PT, ST_A4_CORTO=Math.round(ST_HOJA_PT/Math.SQRT2);
-async function stDibujarA4(e,escala){
-  let sonda=await stDibujar(e,0.1);
+async function stDibujarA4(e,escala,layout){
+  let sonda=await stDibujar(e,0.1,0,layout);
   let W=sonda.wPt,H=sonda.hPt;
   const orient=(W,H)=>{
     const fH=Math.min(1,ST_A4_CORTO/H,ST_A4_LARGO/W);          // apaisada
@@ -6594,7 +6598,7 @@ async function stDibujarA4(e,escala){
     const hoja=(apaisada?ST_A4_CORTO:ST_A4_LARGO)/f;
     let libre=hoja-H;
     for(let k=0;k<4&&libre>40;k++){
-      const s2=await stDibujar(e,0.1,libre);
+      const s2=await stDibujar(e,0.1,libre,layout);
       const o2=orient(s2.wPt,s2.hPt);
       if(o2.apaisada===apaisada&&o2.f>=f-1e-6&&s2.hPt>H+1){sonda=s2;W=s2.wPt;H=s2.hPt;f=o2.f;extra=libre;break;}
       libre*=0.8;
@@ -6603,7 +6607,7 @@ async function stDibujarA4(e,escala){
   const pw=apaisada?ST_A4_LARGO:ST_A4_CORTO, ph=apaisada?ST_A4_CORTO:ST_A4_LARGO;
   const pedida=escala;
   escala=Math.min(escala,ST_CV_LADO/ST_A4_LARGO,Math.sqrt(ST_CV_AREA/(pw*ph)));
-  const cont=await stDibujar(e,escala*f,extra);
+  const cont=await stDibujar(e,escala*f,extra,layout);
   const pag=document.createElement('canvas');
   pag.width=Math.round(pw*escala);pag.height=Math.round(ph*escala);
   const g=pag.getContext('2d');
@@ -6615,77 +6619,222 @@ async function stDibujarA4(e,escala){
   pag.apaisada=apaisada;
   return pag;
 }
-async function stDibujar(e,escala,extra){
+/* Diseños de la hoja exportada. Todos llevan las mismas seis secciones
+   (encabezado, gating, fenotipo, información de la muestra, mix de anticuerpos e
+   información adicional); cambia cómo se reparten. Las secciones sin datos no
+   salen y su hueco lo aprovechan las demás. */
+const ST_LAYOUTS=[
+  {id:'A',n:'Dos filas',d:'Fenotipo junto a la información de la muestra; debajo, el mix junto a la información adicional.'},
+  {id:'B',n:'Tres columnas',d:'Bajo el gating, tres columnas: fenotipo y muestra, mix e información adicional.'},
+  {id:'C',n:'Lateral',d:'El gating a la izquierda con una columna lateral de datos; el mix a todo el ancho debajo.'},
+  {id:'D',n:'Informe',d:'Todo en bandas a lo ancho, como un informe: fenotipo, cifras de la muestra en tarjetas y tablas.'}
+];
+function stLayout(){return ST_LAYOUTS.some(x=>x.id===S.stLayout)?S.stLayout:'A';}
+function stSetLayout(v){S.stLayout=v;save();renderMain();}
+const ST_FUENTE='"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+function stF(peso,px){return peso+' '+px+'px '+ST_FUENTE;}
+
+async function stDibujar(e,escala,extra,layout){
+  layout=layout||stLayout();
   const P=ST_EXP;
   const W=1400;                      // ancho en puntos
   const M=46;                        // margen
-  const anchoUtil=W-M*2;
+  const AU=W-M*2;                    // ancho útil
+  const GH=24, GV=18, GF=22;         // huecos: entre columnas, entre bloques, entre filas
+  const TS=34;                       // alto del título de sección
 
-  /* ── Medición previa, para saber el alto total ── */
   const pasos=e.steps.filter(p=>p.img||p.x||p.y);
   const imgs=await Promise.all(pasos.map(p=>stLoadImg(imgSrc(p.img))));
-  /* El hueco de cada eje sólo se reserva si alguna captura lo usa. */
-  const hayY=pasos.some(p=>(p.y||'').trim());
-  const hayX=pasos.some(p=>(p.x||'').trim());
-  const flecha=34, ejeY=hayY?32:0, etiqX=hayX?32:0;
-  const rej=stReticula(pasos.length,anchoUtil,flecha,ejeY,etiqX,extra);
-  const porFila=rej.porFila, altoImg=rej.altoImg, filas=rej.filas;
-  const celda=rej.anchoImg+ejeY;
-  const altoCelda=altoImg+etiqX+10;
-  /* El bloque entero se centra; las filas comparten retícula. */
-  const anchoFila=porFila*celda+flecha*(porFila-1);
-  const sangrado=Math.max(0,(anchoUtil-anchoFila)/2);
+  const med=document.createElement('canvas').getContext('2d');
 
-  const cabH=84;
-  const gatingH=pasos.length?(40+filas*altoCelda+(filas-1)*ST_HUECO_FILA+22):0;
+  /* ── Datos ── */
+  const cc=stCalc(e);
+  const pctTxt=e.pct?e.pct+(/%$/.test(e.pct)?'':' %'):'';
+  const muestra=[];
+  if(cc.vol!=null)muestra.push(['Volumen total de muestra','µL',stFmtN(cc.vol),0]);
+  if(cc.wbc!=null)muestra.push(['Recuento WBC','células/µL',stFmtN(cc.wbc),0]);
+  if(cc.total!=null)muestra.push(['WBC totales','',stFmtN(cc.total),1]);
+  if(e.pct)muestra.push(['% aprox. población de interés','',pctTxt,3]);
+  if(cc.interes!=null)muestra.push(['Células de interés totales','',stFmtN(cc.interes),2]);
 
-  /* Columna izquierda: tabla. Derecha: fenotipo y porcentaje. */
-  const colIzq=Math.round(anchoUtil*0.54), colDer=anchoUtil-colIzq-24;
-  const filaAlt=25, tablaCab=30;
-  const dosCol=e.panel.length>10;
-  const filasPorCol=dosCol?Math.ceil(e.panel.length/2):Math.max(1,e.panel.length);
-  /* Título adaptado: sólo sale si se puede calcular para algún anticuerpo. */
-  const adInfo=stAdapt(e);
   const pan=stPanelOrdenado(e.panel);
+  const adInfo=stAdapt(e);
   const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
-  const volFilas=adOn?stVolFilas(e):null;
-  const adVol=!!volFilas;
-  const volRowH=21;
-  const notaAdH=adOn?(adVol?22+volFilas.length*volRowH+14:22):0;
-  const tablaH=34+tablaCab+filasPorCol*filaAlt+10+notaAdH;
 
-  /* El texto del fenotipo se mide de verdad para no cortarlo. */
-  const medidor=document.createElement('canvas').getContext('2d');
-  medidor.font='700 22px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  const lineasFeno=stPartir(medidor,e.phenotype||'—',colDer-40);
-  const fenoBox=Math.max(46,lineasFeno.length*29+18);
-  medidor.font='400 16px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  const lineasNotas=e.notes?stPartir(medidor,e.notes,anchoUtil-40):[];
-  const notasH=lineasNotas.length?(22+lineasNotas.length*22+10):0;
+  const adic=[];
+  const opt=stNum(e.optM);
+  if(opt!=null){
+    const vt=stNum(e.volT),vm=stNum(e.volM),perd=stNum(e.loss);
+    adic.push(['Título optimizado para',stFmtD(opt,2)+' ×10⁶ células',0]);
+    if(vt!=null)adic.push(['Volumen total para los títulos estándar',stFmtD(vt,1)+' µL',0]);
+    if(vm!=null)adic.push(['Volumen de muestra para título optimizado',stFmtD(vm,1)+' µL',0]);
+    if(adInfo){
+      if(perd!=null)adic.push(['Pérdida estimada en el procesamiento',stFmtD(adInfo.perd,1)+' %',0]);
+      adic.push(['Células tras el procesamiento',stFmtD(adInfo.finalM,2)+' ×10⁶',1]);
+      (stVolFilas(e)||[]).forEach(r=>{
+        if(r[2]===2)return;               // el total adaptado va al final
+        adic.push([r[0],stFmtD(r[1],1)+' µL',r[1]<0?-1:(r[0].startsWith('Volumen de muestra')?1:0)]);
+      });
+      if(adInfo.volT!=null)adic.push(['Volumen total para título adaptado',stFmtD(adInfo.volT,1)+' µL',2]);
+    }
+  }
 
-  /* Recuento celular: sólo las líneas que el usuario ha rellenado. */
-  const cc=stCalc(e);
-  const recLin=[];
-  if(cc.wbc!=null)recLin.push(['WBC','células/µL',stFmtN(cc.wbc),0]);
-  if(cc.vol!=null)recLin.push(['Volumen total','µL',stFmtN(cc.vol),0]);
-  if(cc.total!=null)recLin.push(['WBC totales','',stFmtN(cc.total),1]);
-  if(cc.interes!=null)recLin.push(['Células de interés','',stFmtN(cc.interes),2]);
-  /* Resultados: % de la población y recuento, en tarjetas de dos en dos bajo el
-     fenotipo. Así la columna derecha se iguala con la tabla y no hace falta una
-     franja extra que robe alto a los gates. */
-  const tarjetas=[];
-  if(e.pct)tarjetas.push(['% aproximado','',e.pct+(/%$/.test(e.pct)?'':' %'),3]);
-  recLin.forEach(l=>tarjetas.push(l));
-  const tarH=50, tarGap=10;
-  const tarSecH=tarjetas.length?(34+Math.ceil(tarjetas.length/2)*(tarH+tarGap)-tarGap):0;
-  const derH=34+fenoBox+(tarSecH?16+tarSecH:0);
-  const bloqueH=Math.max(tablaH,derH)+10;
-  const H=cabH+(gatingH?gatingH+22:12)+bloqueH+(notasH?notasH+8:0)+M*2-10;
+  /* ── Bloques: cada uno sabe su alto para un ancho dado y se dibuja en (x,y) ── */
+  function bCab(w){
+    return {h:54,draw(g,x,y){
+      const gr=g.createLinearGradient(x,0,x+w,0);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);
+      stRect(g,x,y,w,54,14);g.fillStyle=gr;g.fill();
+      g.textAlign='left';g.fillStyle='#FFFFFF';
+      g.font=stF(800,27);
+      const nom=e.name||'Sin título';
+      g.fillText(nom,x+24,y+12);
+      let xp=x+24+g.measureText(nom).width+16;
+      if(e.population){
+        g.font=stF(700,14);
+        const t='Población '+e.population, tw=g.measureText(t).width;
+        stRect(g,xp,y+15,tw+22,25,999);g.fillStyle='rgba(255,255,255,.2)';g.fill();
+        g.fillStyle='#FFFFFF';g.fillText(t,xp+11,y+20);
+      }
+      g.font=stF(600,15);g.globalAlpha=.92;g.textAlign='right';
+      g.fillText('Estrategia de gating · '+new Date().toLocaleDateString('es-ES'),x+w-24,y+19);
+      g.globalAlpha=1;g.textAlign='left';
+    }};
+  }
+  function bGating(w){
+    if(!pasos.length)return null;
+    const hayY=pasos.some(p=>(p.y||'').trim()), hayX=pasos.some(p=>(p.x||'').trim());
+    const flecha=34, ejeY=hayY?32:0, etiqX=hayX?32:0;
+    const rej=stReticula(pasos.length,w,flecha,ejeY,etiqX,extra);
+    const porFila=rej.porFila, altoImg=rej.altoImg, filas=rej.filas;
+    const celda=rej.anchoImg+ejeY, altoCelda=altoImg+etiqX+10;
+    const anchoFila=porFila*celda+flecha*(porFila-1), sangrado=Math.max(0,(w-anchoFila)/2);
+    return {h:TS+filas*altoCelda+(filas-1)*ST_HUECO_FILA,draw(g,x0,y0){
+      stTituloSeccion(g,'ESTRATEGIA DE GATING',x0,y0,w);
+      const y=y0+TS;
+      pasos.forEach((p,i)=>{
+        const fila=Math.floor(i/porFila), enEstaFila=Math.min(porFila,pasos.length-fila*porFila);
+        const izq=(fila%2)===1, orden=i%porFila, col=izq?(porFila-1-orden):orden;
+        const x=x0+sangrado+col*(celda+flecha), cy=y+fila*(altoCelda+ST_HUECO_FILA);
+        stCelda(g,p,imgs[i],x,cy,celda,altoImg,ejeY,etiqX,i+1,pasos.length);
+        if(i<pasos.length-1){
+          if(orden<enEstaFila-1)stFlecha(g,izq?(x-flecha/2):(x+celda+flecha/2),cy+altoImg/2,P.marca2,izq?-1:1);
+          else stFlechaAbajo(g,x+ejeY+(celda-ejeY)/2,cy+altoCelda+ST_HUECO_FILA/2,P.marca2);
+        }
+      });
+    }};
+  }
+  function bFeno(w){
+    if(!(e.phenotype||'').trim())return null;
+    med.font=stF(700,22);
+    const lin=stPartir(med,e.phenotype,w-40), box=Math.max(46,lin.length*29+18);
+    return {h:TS+box,draw(g,x,y){
+      stTituloSeccion(g,'FENOTIPO DE LA POBLACIÓN',x,y,w);
+      stRect(g,x,y+TS,w,box,12);g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
+      g.fillStyle=P.marca3;g.font=stF(700,22);g.textAlign='left';
+      lin.forEach((l,i)=>g.fillText(l,x+20,y+TS+(box-lin.length*29)/2+3+i*29));
+    }};
+  }
+  /* Información de la muestra en tarjetas (cifras grandes) */
+  function bMuestraTarjetas(w){
+    if(!muestra.length)return null;
+    const gap=10, cols=Math.max(1,Math.min(muestra.length,Math.floor((w+gap)/(210+gap))));
+    const filas=Math.ceil(muestra.length/cols), wc=(w-gap*(cols-1))/cols, hc=50;
+    return {h:TS+filas*(hc+gap)-gap,draw(g,x,y){
+      stTituloSeccion(g,'INFORMACIÓN DE LA MUESTRA',x,y,w);
+      muestra.forEach((l,i)=>{
+        const x0=x+(i%cols)*(wc+gap), y0=y+TS+Math.floor(i/cols)*(hc+gap), fuerte=l[3]>=2;
+        stRect(g,x0,y0,wc,hc,12);
+        if(fuerte){const gr=g.createLinearGradient(x0,y0,x0+wc,y0);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);g.fillStyle=gr;g.fill();}
+        else{g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();}
+        g.textAlign='left';g.fillStyle=fuerte?'rgba(255,255,255,.92)':P.tinta2;g.font=stF(700,11.5);
+        g.fillText(stRecortar(g,l[0].toUpperCase()+(l[1]?' ('+l[1]+')':''),wc-26),x0+14,y0+8);
+        g.fillStyle=fuerte?'#FFFFFF':(l[3]===1?P.marca3:P.tinta);g.font=stF(800,23);
+        g.fillText(stRecortar(g,l[2],wc-26),x0+14,y0+22);
+      });
+    }};
+  }
+  /* Tabla de dos columnas (concepto · valor) */
+  function bKV(titulo,filas,w){
+    if(!filas.length)return null;
+    const rh=25;
+    return {h:TS+filas.length*rh+8,draw(g,x,y){
+      stTituloSeccion(g,titulo,x,y,w);
+      const y0=y+TS;
+      stRect(g,x,y0,w,filas.length*rh+8,12);g.fillStyle=P.panel2;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
+      filas.forEach((r,i)=>{
+        const ry=y0+4+i*rh, k=r[r.length-1], val=r.length===4?(r[2]+(r[1]?' '+r[1]:'')):r[1];
+        if(i%2===1){g.fillStyle='rgba(15,40,50,.035)';g.fillRect(x+1,ry,w-2,rh);}
+        if(k>=2){stRect(g,x+4,ry+1,w-8,rh-2,8);g.fillStyle=P.panel;g.fill();}
+        g.textAlign='right';g.font=stF(800,13.5);
+        const vw=g.measureText(val).width;
+        g.fillStyle=k<0?'#C0392B':(k>=1?P.marca3:P.tinta);
+        g.fillText(val,x+w-14,ry+6);
+        g.textAlign='left';g.font=stF(k>=2?800:600,13);g.fillStyle=k>=2?P.marca3:P.tinta2;
+        g.fillText(stRecortar(g,r[0],w-vw-42),x+14,ry+6.5);
+      });
+    }};
+  }
+  function bMix(w,dos){
+    if(!pan.length)return null;
+    const fa=25, cab=30;
+    const dosCol=dos&&pan.length>(w>=1000?6:10)&&w>=600;
+    const fpc=dosCol?Math.ceil(pan.length/2):pan.length;
+    const ad=adOn?adList:null;
+    return {h:TS+cab+fpc*fa,draw(g,x,y){
+      stTituloSeccion(g,'MIX DE ANTICUERPOS',x,y,w);
+      if(dosCol){
+        const hueco=16, sub=(w-hueco)/2, mitad=Math.ceil(pan.length/2);
+        stTabla(g,pan.slice(0,mitad),x,y+TS,sub,cab,fa,ad?ad.slice(0,mitad):null);
+        stTabla(g,pan.slice(mitad),x+sub+hueco,y+TS,sub,cab,fa,ad?ad.slice(mitad):null);
+      }else stTabla(g,pan,x,y+TS,w,cab,fa,ad);
+    }};
+  }
+  const bMuestraKV=w=>bKV('INFORMACIÓN DE LA MUESTRA',muestra.map(l=>[l[0],l[1],l[2],l[3]>=2?2:(l[3]?1:0)]),w);
+  const bAdic=w=>bKV('INFORMACIÓN ADICIONAL',adic,w);
+  function bNotas(w){
+    if(!e.notes)return null;
+    med.font=stF(400,16);
+    const lin=stPartir(med,e.notes,w);
+    return {h:lin.length*22,draw(g,x,y){g.fillStyle=P.tinta2;g.font=stF(400,16);g.textAlign='left';lin.forEach((l,i)=>g.fillText(l,x,y+i*22));}};
+  }
+
+  /* ── Reparto según el diseño: filas de columnas {f: fracción, b: bloques} ── */
+  const L={
+    A:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
+       [{f:1,b:w=>[bFeno(w)]},{f:1,b:w=>[bMuestraTarjetas(w)]}],
+       [{f:.58,b:w=>[bMix(w,true)]},{f:.42,b:w=>[bAdic(w)]}],
+       [{f:1,b:w=>[bNotas(w)]}]],
+    B:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
+       [{f:.29,b:w=>[bFeno(w),bMuestraKV(w)]},{f:.40,b:w=>[bMix(w,false)]},{f:.31,b:w=>[bAdic(w)]}],
+       [{f:1,b:w=>[bNotas(w)]}]],
+    C:[[{f:1,b:w=>[bCab(w)]}],
+       [{f:.68,b:w=>[bGating(w)]},{f:.32,b:w=>[bFeno(w),bMuestraKV(w),bAdic(w)]}],
+       [{f:1,b:w=>[bMix(w,true)]}],
+       [{f:1,b:w=>[bNotas(w)]}]],
+    D:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
+       [{f:1,b:w=>[bFeno(w)]}],
+       [{f:1,b:w=>[bMuestraTarjetas(w)]}],
+       [{f:.58,b:w=>[bMix(w,true)]},{f:.42,b:w=>[bAdic(w)]}],
+       [{f:1,b:w=>[bNotas(w)]}]]
+  }[layout]||[];
+
+  const filas=[];
+  L.forEach(spec=>{
+    const cs=spec.filter(c=>c.b(AU).some(Boolean));
+    if(!cs.length)return;
+    const tot=cs.reduce((s,c)=>s+c.f,0), disp=AU-GH*(cs.length-1);
+    const cols=cs.map(c=>{
+      const w=Math.round(disp*c.f/tot), bs=c.b(w).filter(Boolean);
+      return {w,bs,h:bs.reduce((s,b)=>s+b.h,0)+GV*(bs.length-1)};
+    });
+    filas.push({cols,h:Math.max(...cols.map(c=>c.h))});
+  });
+  const H=Math.round(M*2+filas.reduce((s,f)=>s+f.h,0)+GF*Math.max(0,filas.length-1));
 
   /* ── Dibujo ── */
   /* A 600 ppp la hoja puede superar lo que el navegador dibuja: si pasa, se baja
-     la escala justo lo necesario y se avisa (cv.escalaReal / cv.limitado). */
+     la escala justo lo necesario y se avisa (cv.limitado). */
   const pedida=escala;
   escala=Math.min(escala,ST_CV_LADO/Math.max(W,H),Math.sqrt(ST_CV_AREA/(W*H)));
   const cv=document.createElement('canvas');
@@ -6693,130 +6842,16 @@ async function stDibujar(e,escala,extra){
   cv.ppp=Math.round(escala*ST_HOJA_PT/ST_HOJA_IN);
   cv.width=Math.round(W*escala);cv.height=Math.round(H*escala);
   const g=cv.getContext('2d');
-  g.imageSmoothingEnabled=true;
-  g.imageSmoothingQuality='high';
+  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
   g.scale(escala,escala);
   g.textBaseline='top';
   g.fillStyle=P.papel;g.fillRect(0,0,W,H);
-
-  /* Cabecera: banda con degradado de marca y el título dentro */
-  const grad=g.createLinearGradient(M,0,W-M,0);
-  grad.addColorStop(0,P.marca2);grad.addColorStop(1,P.marca1);
-  stRect(g,M,M,anchoUtil,54,14);g.fillStyle=grad;g.fill();
-  g.fillStyle='#FFFFFF';
-  g.font='800 27px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  g.textAlign='left';
-  g.fillText(stTitle(e),M+24,M+12);
-  g.font='600 15px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  g.globalAlpha=.9;
-  g.textAlign='right';
-  g.fillText('Estrategia de gating · '+new Date().toLocaleDateString('es-ES'),W-M-24,M+19);
-  g.globalAlpha=1;g.textAlign='left';
-
-  let y=M+cabH-14;
-
-  /* Sección de gating */
-  if(pasos.length){
-    stTituloSeccion(g,'ESTRATEGIA DE GATING',M,y,anchoUtil);
-    y+=34;
-    pasos.forEach((p,i)=>{
-      const fila=Math.floor(i/porFila);
-      const enEstaFila=Math.min(porFila,pasos.length-fila*porFila);
-      const haciaIzquierda=(fila%2)===1;          // las filas pares van al revés
-      const orden=i%porFila;                       // posición dentro del recorrido
-      const col=haciaIzquierda?(porFila-1-orden):orden;
-      const x=M+sangrado+col*(celda+flecha);
-      const cy=y+fila*(altoCelda+ST_HUECO_FILA);
-      stCelda(g,p,imgs[i],x,cy,celda,altoImg,ejeY,etiqX,i+1,pasos.length);
-      if(i<pasos.length-1){
-        if(orden<enEstaFila-1){
-          /* Siguiente paso en la misma fila: flecha en el hueco, apuntando
-             hacia donde avanza el recorrido. */
-          const xh=haciaIzquierda?(x-flecha/2):(x+celda+flecha/2);
-          stFlecha(g,xh,cy+altoImg/2,P.marca2,haciaIzquierda?-1:1);
-        }else{
-          /* Último de la fila: se baja a la siguiente por este mismo lado. */
-          stFlechaAbajo(g,x+ejeY+(celda-ejeY)/2,cy+altoCelda+ST_HUECO_FILA/2,P.marca2);
-        }
-      }
-    });
-    y+=filas*altoCelda+(filas-1)*ST_HUECO_FILA+22;
-  }else{
-    y+=12;
-  }
-
-  /* Mix de anticuerpos */
-  stTituloSeccion(g,'MIX DE ANTICUERPOS',M,y,colIzq);
-  if(dosCol){
-    const hueco=16, sub=(colIzq-hueco)/2, mitad=Math.ceil(e.panel.length/2);
-    stTabla(g,pan.slice(0,mitad),M,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(0,mitad):null);
-    stTabla(g,pan.slice(mitad),M+sub+hueco,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(mitad):null);
-  }else{
-    stTabla(g,pan,M,y+34,colIzq,tablaCab,filaAlt,adOn?adList:null);
-  }
-  if(adOn){
-    const yn=y+34+tablaCab+filasPorCol*filaAlt+8;
-    g.fillStyle=P.tinta3;g.textAlign='left';
-    g.font='400 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-    const tx='Estándar para '+stFmtD(adInfo.opt,2)+'×10⁶ células · adaptado a '+stFmtD(adInfo.finalM,2)+'×10⁶ células'+(adInfo.perd>0?' (con '+stFmtD(adInfo.perd,1)+' % de pérdida)':'');
-    g.fillText(stRecortar(g,tx,colIzq),M,yn);
-    if(adVol){
-      const bx=M, by=yn+22, bw=Math.min(colIzq,400);
-      stRect(g,bx,by,bw,volFilas.length*volRowH+6,10);
-      g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
-      volFilas.forEach((r,k)=>{
-        const ry=by+3+k*volRowH, fuerte=r[2]===2;
-        g.textAlign='left';g.fillStyle=fuerte?P.marca3:P.tinta2;
-        g.font=(fuerte?'800 ':'600 ')+'13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-        g.fillText(r[0],bx+14,ry+4);
-        g.textAlign='right';g.fillStyle=r[1]<0?'#C0392B':(fuerte?P.marca3:P.tinta);
-        g.font='800 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-        g.fillText(stFmtD(r[1],1)+' µL',bx+bw-14,ry+4);
-        g.textAlign='left';
-      });
-    }
-  }
-
-  /* Fenotipo, porcentaje y recuento */
-  const xd=M+colIzq+24;
-  stTituloSeccion(g,'FENOTIPO DE LA POBLACIÓN',xd,y,colDer);
-  const yFeno=y+34;
-  stRect(g,xd,yFeno,colDer,fenoBox,12);
-  g.fillStyle=P.panel;g.fill();
-  g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();
-  g.fillStyle=P.marca3;
-  g.font='700 22px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-  lineasFeno.forEach((l,i)=>g.fillText(l,xd+20,yFeno+(fenoBox-lineasFeno.length*29)/2+3+i*29));
-
-  if(tarjetas.length){
-    const yt=yFeno+fenoBox+16;
-    stTituloSeccion(g,e.pct?(recLin.length?'% APROXIMADO Y RECUENTO CELULAR':'% APROXIMADO'):'RECUENTO CELULAR',xd,yt,colDer);
-    const wc=(colDer-tarGap)/2, y0=yt+34;
-    tarjetas.forEach((l,i)=>{
-      const x0=xd+(i%2)*(wc+tarGap), cy=y0+Math.floor(i/2)*(tarH+tarGap);
-      const fuerte=l[3]===2||l[3]===3;
-      stRect(g,x0,cy,wc,tarH,12);
-      if(fuerte){
-        const gr=g.createLinearGradient(x0,cy,x0+wc,cy);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);
-        g.fillStyle=gr;g.fill();
-      }else{g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();}
-      g.textAlign='left';
-      g.fillStyle=fuerte?'rgba(255,255,255,.92)':P.tinta2;
-      g.font='700 11.5px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(l[0].toUpperCase()+(l[1]?' ('+l[1]+')':''),x0+16,cy+8);
-      g.fillStyle=fuerte?'#FFFFFF':(l[3]===1?P.marca3:P.tinta);
-      g.font='800 23px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-      g.fillText(l[2],x0+16,cy+22);
-    });
-  }
-
-  /* Notas al pie */
-  if(lineasNotas.length){
-    const yn=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH+8;
-    g.fillStyle=P.tinta2;
-    g.font='400 16px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
-    lineasNotas.forEach((l,i)=>g.fillText(l,M,yn+i*22));
-  }
+  let y=M;
+  filas.forEach(f=>{
+    let x=M;
+    f.cols.forEach(c=>{let yy=y;c.bs.forEach(b=>{b.draw(g,x,yy);yy+=b.h+GV;});x+=c.w+GH;});
+    y+=f.h+GF;
+  });
   cv.wPt=W;cv.hPt=H;
   return cv;
 }
@@ -6959,7 +6994,7 @@ function stTabla(g,panel,x,y,w,hCab,hFila,ad){
   g.fillStyle=P.tinta2;
   g.font='800 '+fCab+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   g.fillText('MARCADOR',c1,y+11);
-  g.fillText(ad&&estrecha?'FLUOR.':'FLUOROCROMO',c2,y+11);
+  g.fillText(ad&&w<600?'FLUOR.':'FLUOROCROMO',c2,y+11);
   g.textAlign='right';
   g.fillText('TÍTULO',c3,y+5);g.fillText('ESTÁNDAR (µL)',c3,y+17);
   if(ad){g.fillStyle=P.marca3;g.fillText('TÍTULO',c4,y+5);g.fillText('ADAPTADO (µL)',c4,y+17);}
