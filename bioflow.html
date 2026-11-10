@@ -2240,6 +2240,23 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 /* ════════ 18 · MOVIMIENTO ════════ */
 .scroll>.wrap{animation:viewIn .3s var(--ease-out)}
 .scroll>.wrap.quiet{animation:none}
+.st-num{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:7px;background:var(--ac,#12A793);color:#fff;font-size:12px;font-weight:800;margin-right:9px;vertical-align:2px}
+.st-ed .rp-rowacts .sc-ibtn{display:inline-flex}
+.st-ed .st-g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.st-ed-b{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.st-ed-side .rp-grid,.st-ed-side .st-g3{grid-template-columns:1fr}
+.st-ed-side{position:sticky;top:12px}
+.st-ed-d3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
+.st-ed-d3 .rp-grid,.st-ed-d3 .st-g3{grid-template-columns:1fr}
+.st-ed-d2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.st-ed-d2 .rp-grid{grid-template-columns:1fr}
+.st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 16px}
+.st-tab{display:inline-flex;align-items:center;border:1px solid var(--bd2);background:var(--bg2,transparent);color:var(--tx2);border-radius:999px;padding:6px 14px 6px 8px;font-weight:650;font-size:13px;cursor:pointer}
+.st-tab .st-num{margin-right:7px;background:var(--tx3)}
+.st-tab.on{border-color:var(--ac,#12A793);color:var(--tx)}
+.st-tab.on .st-num{background:var(--ac,#12A793)}
+@media(max-width:1100px){.st-ed-b,.st-ed-d3,.st-ed-d2{grid-template-columns:1fr}.st-ed-side{position:static}}
+@media(max-width:640px){.st-ed .st-g3{grid-template-columns:1fr}}
 .no-up{text-transform:none}
 @keyframes viewIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 /* Cambio de área: la vista saliente se desvanece hacia arriba o hacia abajo
@@ -3686,7 +3703,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.27';
+const APP_VERSION='2.28';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6453,60 +6470,38 @@ function stViewEdit(e){
       </td></tr>`).join('')
     :`<tr><td colspan="5" style="color:var(--tx3);font-size:12.5px;padding:10px">Sin anticuerpos todavía.</td></tr>`;
 
-  return `<button class="back-btn" onclick="stHome()">${ic('arrow-left',15)} Estrategias</button>
-    <div class="page-head">
-      <div><div class="eyebrow">Estrategias</div><h1 class="title" id="stHeadTitle">${esc(stTitle(e))}</h1><p class="sub">${e.steps.length} captura(s) · ${e.panel.length} anticuerpo(s)</p></div>
-      <div class="st-acts">
-        <button class="btn btn-g" onclick="stExportPng('${e.id}')">${ic('image',16)} PNG</button>
-        <button class="btn btn-g" onclick="stExportPdf('${e.id}')">${ic('pdf',16)} PDF</button>
-        <button class="btn btn-g sm" onclick="stDuplicate('${e.id}')" title="Duplicar">${ic('copy',15)}</button>
-        <button class="btn btn-dng sm" onclick="stDelete('${e.id}')" title="Eliminar">${ic('trash',15)}</button>
-      </div>
+  /* ── Secciones (las mismas seis de la hoja exportada) ── */
+  const opc='<span style="color:var(--tx3);font-weight:400">(opcional)</span>';
+  const fld=(lbl,campo,ph,extra)=>`<div class="mfld"><label class="mlbl"><span>${lbl}</span></label><input class="minp"${extra||''} value="${esc(e[campo])}" placeholder="${ph}" onchange="stSet('${campo}',this.value)"></div>`;
+  const sec=(n,icono,titulo,cuerpo,cab)=>`<div class="section st-sec" id="stSec${n}"><div class="sec-hd"><div class="sec-ico">${ic(icono,19)}</div><h2><span class="st-num">${n}</span>${titulo}</h2>${cab||''}</div><div class="rp-card">${cuerpo}</div></div>`;
+  const S1=sec(1,'info','Encabezado',`<div class="rp-grid">
+      ${fld('Nombre o número de muestra','name','94029')}
+      ${fld('Población '+opc,'population','P4')}
+    </div><p class="sub" style="margin:2px 2px 0">La fecha se pone sola al exportar (${new Date().toLocaleDateString('es-ES')}).</p>`);
+  const S2=sec(2,'target',`Estrategia de gating <span class="cnt">${e.steps.length}/${ST_MAX_STEPS}</span>`,
+    `${zona}${e.steps.length?`<p class="sub" style="margin:16px 0 12px">Se encadenan en este orden con flechas. Las etiquetas de eje acompañan a cada gráfico con el color que elijas.</p><div class="st-steps">${pasos}</div>`:''}`,
+    e.steps.length?`<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearSteps()" title="Quitar todas las capturas">${ic('trash',14)} Vaciar</button>`:'');
+  const S3=sec(3,'flask','Fenotipo de la población',`<div class="mfld" style="margin-bottom:0"><label class="mlbl">Marcadores que definen la población</label><textarea class="minp auto" rows="2" placeholder="CD45+, CD3−, CD16+, CD56−, CD19−, CD2+d" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('phenotype',this.value)">${esc(e.phenotype)}</textarea></div>`);
+  const S4=sec(4,'tube','Información de la muestra',`<div class="rp-grid st-g3">
+      ${fld('Volumen total de muestra (µL) '+opc,'vol','2720',' inputmode="decimal"')}
+      ${fld('Recuento WBC (células/µL) '+opc,'wbc','7500',' inputmode="decimal"')}
+      ${fld('% aprox. población de interés','pct','22.9',' inputmode="decimal"')}
+    </div><p class="sub" id="stCalc" style="margin:2px 2px 0">${stCalcTxt(e)}</p>`);
+  const S5=sec(5,'sheet','Mix de anticuerpos',`<label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
+      <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
+      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena los anticuerpos con fluorocromo por título, de menor a mayor">${ic('arrow-down',14)} Ordenar por título</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
+      <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título estándar (<span class="no-up">µ</span>L)</th><th style="text-align:center">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
+    `<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearPanel()" title="Vaciar la tabla y el texto pegado">${ic('trash',14)} Vaciar</button>`);
+  const S6=sec(6,'layers','Información adicional',`<div class="rp-grid">
+      ${fld('Título optimizado para (millones de células)','optM','15',' inputmode="decimal"')}
+      ${fld('Volumen total para los títulos estándar (µL)','volT','400',' inputmode="decimal"')}
+      ${fld('Volumen de muestra para título optimizado (µL)','volM','100',' inputmode="decimal"')}
+      ${fld('Pérdida estimada en el procesamiento (%)','loss','30',' inputmode="decimal"')}
     </div>
-
-    <div class="section"><div class="sec-hd"><div class="sec-ico">${ic('info',19)}</div><h2>Identificación</h2></div>
-      <div class="rp-card"><div class="rp-grid">
-        <div class="mfld"><label class="mlbl">Nombre o número de muestra</label><input class="minp" value="${esc(e.name)}" placeholder="94029" onchange="stSet('name',this.value)"></div>
-        <div class="mfld"><label class="mlbl">Población <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" value="${esc(e.population)}" placeholder="P4" onchange="stSet('population',this.value)"></div>
-        <div class="mfld"><label class="mlbl">% aproximado</label><input class="minp" value="${esc(e.pct)}" placeholder="22.9" onchange="stSet('pct',this.value)"></div>
-        <div class="mfld"><label class="mlbl"><span>WBC (células/µL) <span style="color:var(--tx3);font-weight:400">(opcional)</span></span></label><input class="minp" inputmode="decimal" value="${esc(e.wbc)}" placeholder="7500" onchange="stSet('wbc',this.value)"></div>
-        <div class="mfld"><label class="mlbl"><span>Volumen total (µL) <span style="color:var(--tx3);font-weight:400">(opcional)</span></span></label><input class="minp" inputmode="decimal" value="${esc(e.vol)}" placeholder="200" onchange="stSet('vol',this.value)"></div>
-      </div>
-      <p class="sub" id="stCalc" style="margin:12px 2px 0">${stCalcTxt(e)}</p></div>
-    </div>
-
-    <div class="section"><div class="sec-hd"><div class="sec-ico">${ic('target',19)}</div><h2>Estrategia de gating <span class="cnt">${e.steps.length}/${ST_MAX_STEPS}</span></h2>${e.steps.length?`<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearSteps()" title="Quitar todas las capturas">${ic('trash',14)} Vaciar</button>`:''}</div>
-      <div class="rp-card">
-        ${zona}
-        ${e.steps.length?`<p class="sub" style="margin:16px 0 12px">Se encadenan en este orden con flechas. Las etiquetas de eje acompañan a cada gráfico con el color que elijas.</p><div class="st-steps">${pasos}</div>`:''}
-      </div>
-    </div>
-
-    <div class="section"><div class="sec-hd"><div class="sec-ico">${ic('sheet',19)}</div><h2>Mix de anticuerpos</h2><div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearPanel()" title="Vaciar la tabla y el texto pegado">${ic('trash',14)} Vaciar</button></div>
-      <div class="rp-card">
-        <label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
-        <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
-        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena los anticuerpos con fluorocromo por título, de menor a mayor">${ic('arrow-down',14)} Ordenar por título</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
-        <div class="rp-grid" style="margin-bottom:4px">
-          <div class="mfld"><label class="mlbl"><span>Título optimizado para (millones de células)</span></label><input class="minp" inputmode="decimal" value="${esc(e.optM)}" placeholder="15" onchange="stSet('optM',this.value)"></div>
-          <div class="mfld"><label class="mlbl"><span>Pérdida estimada en el procesamiento (%)</span></label><input class="minp" inputmode="decimal" value="${esc(e.loss)}" placeholder="30" onchange="stSet('loss',this.value)"></div>
-          <div class="mfld"><label class="mlbl"><span>Volumen total para los títulos estándar (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volT)}" placeholder="400" onchange="stSet('volT',this.value)"></div>
-          <div class="mfld"><label class="mlbl"><span>Volumen de muestra para título optimizado (µL)</span></label><input class="minp" inputmode="decimal" value="${esc(e.volM)}" placeholder="100" onchange="stSet('volM',this.value)"></div>
-        </div>
-        <p class="sub" id="stAdaptInfo" style="margin:0 2px 10px">${stAdaptTxt(e)}</p>
-        <div id="stAdaptVol">${stVolHtml(e)}</div>
-        <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título estándar (<span class="no-up">µ</span>L)</th><th style="text-align:center">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      </div>
-    </div>
-
-    <div class="section"><div class="sec-hd"><div class="sec-ico">${ic('flask',19)}</div><h2>Fenotipo de la población</h2></div>
-      <div class="rp-card">
-        <div class="mfld"><label class="mlbl">Marcadores que definen la población</label><textarea class="minp auto" rows="2" placeholder="CD45+, CD3−, CD16+, CD56−, CD19−, CD2+d" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('phenotype',this.value)">${esc(e.phenotype)}</textarea></div>
-        <div class="mfld" style="margin-bottom:0"><label class="mlbl">Notas <span style="color:var(--tx3);font-weight:400">(opcional, salen al pie del documento)</span></label><textarea class="minp auto" rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('notes',this.value)">${esc(e.notes)}</textarea></div>
-      </div>
-    </div>
-
-    <div class="section">
+    <p class="sub" id="stAdaptInfo" style="margin:0 2px 10px">${stAdaptTxt(e)}</p>
+    <div id="stAdaptVol">${stVolHtml(e)}</div>`);
+  const SN=`<div class="section st-sec"><div class="sec-hd"><div class="sec-ico">${ic('message',19)}</div><h2>Notas</h2></div><div class="rp-card"><div class="mfld" style="margin-bottom:0"><label class="mlbl">Salen al pie del documento ${opc}</label><textarea class="minp auto" rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('notes',this.value)">${esc(e.notes)}</textarea></div></div></div>`;
+  const SX=`<div class="section">
       <div class="rp-card">
         <div class="cfg-row cfg-block"><div class="cfg-txt"><b>${ic('export',15)} Exportar</b><span>El PDF incrusta exactamente la misma hoja que el PNG, así que el contenido es idéntico. La estrategia de gating ocupa el lugar principal y no depende del tema de la app.</span></div></div>
         <div class="cfg-row">
@@ -6526,7 +6521,44 @@ function stViewEdit(e){
         </div>
       </div>
     </div>`;
+
+  /* ── Reparto según la vista elegida ── */
+  const vista=stEdLayout();
+  let cuerpo;
+  if(vista==='B'){
+    cuerpo=`<div class="st-ed-b"><div class="st-ed-main">${S2}${S5}</div><aside class="st-ed-side">${S1}${S3}${S4}${S6}${SN}</aside></div>${SX}`;
+  }else if(vista==='C'){
+    const secs=[S1,S2,S3,S4,S5,S6,SN],nombres=['Encabezado','Gating','Fenotipo','Muestra','Mix','Adicional','Notas'];
+    const t=Math.min(Math.max(1,V.stTab||2),7);
+    cuerpo=`<div class="st-tabs">${nombres.map((n,i)=>`<button class="st-tab${t===i+1?' on':''}" onclick="V.stTab=${i+1};stRender()">${i<6?`<span class="st-num">${i+1}</span>`:''}${n}</button>`).join('')}</div>${secs[t-1]}${SX}`;
+  }else if(vista==='D'){
+    cuerpo=`<div class="st-ed-d3">${S1}${S3}${S4}</div>${S2}<div class="st-ed-d2">${S5}${S6}</div>${SN}${SX}`;
+  }else{
+    cuerpo=`${S1}${S2}${S3}${S4}${S5}${S6}${SN}${SX}`;
+  }
+
+  return `<button class="back-btn" onclick="stHome()">${ic('arrow-left',15)} Estrategias</button>
+    <div class="page-head">
+      <div><div class="eyebrow">Estrategias</div><h1 class="title" id="stHeadTitle">${esc(stTitle(e))}</h1><p class="sub">${e.steps.length} captura(s) · ${e.panel.length} anticuerpo(s)</p></div>
+      <div class="st-acts">
+        <div class="seg" title="Distribución de los campos en pantalla">${ST_ED_LAYOUTS.map(x=>`<button class="seg-btn${vista===x.id?' on':''}" onclick="stSetEdLayout('${x.id}')" title="${x.d}">${x.n}</button>`).join('')}</div>
+        <button class="btn btn-g" onclick="stExportPng('${e.id}')">${ic('image',16)} PNG</button>
+        <button class="btn btn-g" onclick="stExportPdf('${e.id}')">${ic('pdf',16)} PDF</button>
+        <button class="btn btn-g sm" onclick="stDuplicate('${e.id}')" title="Duplicar">${ic('copy',15)}</button>
+        <button class="btn btn-dng sm" onclick="stDelete('${e.id}')" title="Eliminar">${ic('trash',15)}</button>
+      </div>
+    </div>
+    <div class="st-ed st-ed-${vista}">${cuerpo}</div>`;
 }
+/* Vistas del editor: las mismas secciones repartidas de cuatro formas. */
+const ST_ED_LAYOUTS=[
+  {id:'A',n:'Lista',d:'Las seis secciones una debajo de otra, en el orden de la hoja.'},
+  {id:'B',n:'Lateral',d:'Gating y mix a la izquierda; los datos en una columna lateral.'},
+  {id:'C',n:'Pestañas',d:'Una sección cada vez, con pestañas numeradas.'},
+  {id:'D',n:'Panel',d:'Encabezado, fenotipo y muestra arriba en tres columnas; gating; mix junto a la información adicional.'}
+];
+function stEdLayout(){return ST_ED_LAYOUTS.some(x=>x.id===S.stEdLayout)?S.stEdLayout:'A';}
+function stSetEdLayout(v){S.stEdLayout=v;save();stRender();}
 
 /* ════════ EXPORTACIÓN ════════ */
 function stLoadImg(src){return new Promise(res=>{if(!src)return res(null);const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
