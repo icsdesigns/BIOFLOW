@@ -2243,19 +2243,6 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 .st-num{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:7px;background:var(--ac,#12A793);color:#fff;font-size:12px;font-weight:800;margin-right:9px;vertical-align:2px}
 .st-ed .rp-rowacts .sc-ibtn{display:inline-flex}
 .st-ed .st-g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.st-ed-b{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
-.st-ed-side .rp-grid,.st-ed-side .st-g3{grid-template-columns:1fr}
-.st-ed-side{position:sticky;top:12px}
-.st-ed-d3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
-.st-ed-d3 .rp-grid,.st-ed-d3 .st-g3{grid-template-columns:1fr}
-.st-ed-d2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
-.st-ed-d2 .rp-grid{grid-template-columns:1fr}
-.st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 16px}
-.st-tab{display:inline-flex;align-items:center;border:1px solid var(--bd2);background:var(--bg2,transparent);color:var(--tx2);border-radius:999px;padding:6px 14px 6px 8px;font-weight:650;font-size:13px;cursor:pointer}
-.st-tab .st-num{margin-right:7px;background:var(--tx3)}
-.st-tab.on{border-color:var(--ac,#12A793);color:var(--tx)}
-.st-tab.on .st-num{background:var(--ac,#12A793)}
-@media(max-width:1100px){.st-ed-b,.st-ed-d3,.st-ed-d2{grid-template-columns:1fr}.st-ed-side{position:static}}
 @media(max-width:640px){.st-ed .st-g3{grid-template-columns:1fr}}
 .no-up{text-transform:none}
 @keyframes viewIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -3703,7 +3690,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.28';
+const APP_VERSION='2.29';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6505,10 +6492,6 @@ function stViewEdit(e){
       <div class="rp-card">
         <div class="cfg-row cfg-block"><div class="cfg-txt"><b>${ic('export',15)} Exportar</b><span>El PDF incrusta exactamente la misma hoja que el PNG, así que el contenido es idéntico. La estrategia de gating ocupa el lugar principal y no depende del tema de la app.</span></div></div>
         <div class="cfg-row">
-          <div class="cfg-txt"><b>Diseño de la hoja</b><span>${ST_LAYOUTS.find(x=>x.id===stLayout()).d}</span></div>
-          <div class="seg">${ST_LAYOUTS.map(x=>`<button class="seg-btn${stLayout()===x.id?' on':''}" onclick="stSetLayout('${x.id}')">${x.n}</button>`).join('')}</div>
-        </div>
-        <div class="cfg-row">
           <div class="cfg-txt"><b>Calidad de exportación</b><span>${ST_DPI.find(x=>x.v===stDpi()).d}. Ancho resultante: ${stAnchoPx(stDpi())} px (A4 apaisado). Vale para PNG y PDF.</span></div>
           <div class="seg">${ST_DPI.map(x=>`<button class="seg-btn${stDpi()===x.v?' on':''}" onclick="stSetDpi(${x.v})">${x.n}</button>`).join('')}</div>
         </div>
@@ -6522,44 +6505,20 @@ function stViewEdit(e){
       </div>
     </div>`;
 
-  /* ── Reparto según la vista elegida ── */
-  const vista=stEdLayout();
-  let cuerpo;
-  if(vista==='B'){
-    cuerpo=`<div class="st-ed-b"><div class="st-ed-main">${S2}${S5}</div><aside class="st-ed-side">${S1}${S3}${S4}${S6}${SN}</aside></div>${SX}`;
-  }else if(vista==='C'){
-    const secs=[S1,S2,S3,S4,S5,S6,SN],nombres=['Encabezado','Gating','Fenotipo','Muestra','Mix','Adicional','Notas'];
-    const t=Math.min(Math.max(1,V.stTab||2),7);
-    cuerpo=`<div class="st-tabs">${nombres.map((n,i)=>`<button class="st-tab${t===i+1?' on':''}" onclick="V.stTab=${i+1};stRender()">${i<6?`<span class="st-num">${i+1}</span>`:''}${n}</button>`).join('')}</div>${secs[t-1]}${SX}`;
-  }else if(vista==='D'){
-    cuerpo=`<div class="st-ed-d3">${S1}${S3}${S4}</div>${S2}<div class="st-ed-d2">${S5}${S6}</div>${SN}${SX}`;
-  }else{
-    cuerpo=`${S1}${S2}${S3}${S4}${S5}${S6}${SN}${SX}`;
-  }
+  const cuerpo=`${S1}${S2}${S3}${S4}${S5}${S6}${SN}${SX}`;
 
   return `<button class="back-btn" onclick="stHome()">${ic('arrow-left',15)} Estrategias</button>
     <div class="page-head">
       <div><div class="eyebrow">Estrategias</div><h1 class="title" id="stHeadTitle">${esc(stTitle(e))}</h1><p class="sub">${e.steps.length} captura(s) · ${e.panel.length} anticuerpo(s)</p></div>
       <div class="st-acts">
-        <div class="seg" title="Distribución de los campos en pantalla">${ST_ED_LAYOUTS.map(x=>`<button class="seg-btn${vista===x.id?' on':''}" onclick="stSetEdLayout('${x.id}')" title="${x.d}">${x.n}</button>`).join('')}</div>
         <button class="btn btn-g" onclick="stExportPng('${e.id}')">${ic('image',16)} PNG</button>
         <button class="btn btn-g" onclick="stExportPdf('${e.id}')">${ic('pdf',16)} PDF</button>
         <button class="btn btn-g sm" onclick="stDuplicate('${e.id}')" title="Duplicar">${ic('copy',15)}</button>
         <button class="btn btn-dng sm" onclick="stDelete('${e.id}')" title="Eliminar">${ic('trash',15)}</button>
       </div>
     </div>
-    <div class="st-ed st-ed-${vista}">${cuerpo}</div>`;
+    <div class="st-ed">${cuerpo}</div>`;
 }
-/* Vistas del editor: las mismas secciones repartidas de cuatro formas. */
-const ST_ED_LAYOUTS=[
-  {id:'A',n:'Lista',d:'Las seis secciones una debajo de otra, en el orden de la hoja.'},
-  {id:'B',n:'Lateral',d:'Gating y mix a la izquierda; los datos en una columna lateral.'},
-  {id:'C',n:'Pestañas',d:'Una sección cada vez, con pestañas numeradas.'},
-  {id:'D',n:'Panel',d:'Encabezado, fenotipo y muestra arriba en tres columnas; gating; mix junto a la información adicional.'}
-];
-function stEdLayout(){return ST_ED_LAYOUTS.some(x=>x.id===S.stEdLayout)?S.stEdLayout:'A';}
-function stSetEdLayout(v){S.stEdLayout=v;save();stRender();}
-
 /* ════════ EXPORTACIÓN ════════ */
 function stLoadImg(src){return new Promise(res=>{if(!src)return res(null);const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
 function stFileName(e,ext){
@@ -6661,8 +6620,7 @@ const ST_LAYOUTS=[
   {id:'C',n:'Lateral',d:'El gating a la izquierda con una columna lateral de datos; el mix a todo el ancho debajo.'},
   {id:'D',n:'Informe',d:'Todo en bandas a lo ancho, como un informe: fenotipo, cifras de la muestra en tarjetas y tablas.'}
 ];
-function stLayout(){return ST_LAYOUTS.some(x=>x.id===S.stLayout)?S.stLayout:'A';}
-function stSetLayout(v){S.stLayout=v;save();renderMain();}
+function stLayout(){return 'A';}   // diseño elegido; los demás se conservan por si se recuperan
 const ST_FUENTE='"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
 function stF(peso,px){return peso+' '+px+'px '+ST_FUENTE;}
 
