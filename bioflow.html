@@ -3685,7 +3685,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.19';
+const APP_VERSION='2.20';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -5976,6 +5976,8 @@ function stMigrate(){
     if(typeof e.population!=='string')e.population='';
     if(typeof e.phenotype!=='string')e.phenotype='';
     if(typeof e.pct!=='string')e.pct='';
+    if(typeof e.wbc!=='string')e.wbc='';
+    if(typeof e.vol!=='string')e.vol='';
     if(typeof e.notes!=='string')e.notes='';
     if(!Array.isArray(e.steps))e.steps=[];
     e.steps=e.steps.slice(0,ST_MAX_STEPS);
@@ -5996,6 +5998,39 @@ function stMigrate(){
     if(!e.createdAt)e.createdAt=new Date().toISOString();
   });
 }
+/* ── Recuento celular ──
+   WBC (células/µL) y volumen total (µL) son opcionales. Leucocitos totales =
+   WBC × volumen; células de interés = % de la población × leucocitos totales.
+   Lo que no se rellena no sale en el documento ni se calcula. */
+function stNum(s){
+  let t=String(s==null?'':s).replace(/[%\s ]/g,'');
+  if(!t)return null;
+  if(t.includes(',')&&t.includes('.'))t=t.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(t))t=t.replace(/\./g,'');
+  else t=t.replace(',','.');
+  const n=Number(t);
+  return isFinite(n)&&n>=0?n:null;
+}
+function stFmtN(n){
+  if(n==null||!isFinite(n))return '';
+  const r=n>=1000?Math.round(n):Math.round(n*10)/10;
+  const [ent,dec]=String(r).split('.');
+  return ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+(dec?','+dec:'');
+}
+function stCalc(e){
+  const wbc=stNum(e.wbc),vol=stNum(e.vol),pct=stNum(e.pct);
+  const total=(wbc!=null&&vol!=null)?wbc*vol:null;
+  const interes=(total!=null&&pct!=null)?total*pct/100:null;
+  return {wbc,vol,pct,total,interes};
+}
+function stCalcTxt(e){
+  const c=stCalc(e);
+  if(c.total==null)return 'Rellena WBC y volumen total para calcular los leucocitos totales.';
+  let t='Leucocitos totales: <b>'+stFmtN(c.total)+'</b>';
+  if(c.interes!=null)t+=' · Células de interés: <b>'+stFmtN(c.interes)+'</b>';
+  else t+=' · Con el % aproximado se calculan también las células de interés.';
+  return t;
+}
 function stTitle(e){return (e.name||'Sin título')+(e.population?' ('+e.population+')':'');}
 
 /* ── Navegación ── */
@@ -6003,7 +6038,7 @@ function stHome(){V.area='strategies';S.area='strategies';V.stpage='home';V.stid
 function stOpen(id){if(!stGet(id))return;V.area='strategies';S.area='strategies';V.stpage='edit';V.stid=id;S.lastStid=id;save();closeDrawer();renderAll();if(isMobile()&&!S.sideOff){S.sideOff=true;applySide();}}
 function stNew(){
   const e={id:uid(),name:uniqueName('Nueva estrategia',stList().map(x=>x.name),'Nueva estrategia'),population:'',
-    steps:[],panel:[],phenotype:'',pct:'',notes:'',createdAt:new Date().toISOString()};
+    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',notes:'',createdAt:new Date().toISOString()};
   stList().unshift(e);save();stOpen(e.id);toast('Estrategia creada',{icon:'circle-check'});
 }
 function stDuplicate(id){
@@ -6031,6 +6066,7 @@ function stSet(campo,valor){
     const h=document.getElementById('stHeadTitle');if(h)h.textContent=stTitle(e);
     renderSidebar();
   }
+  if(campo==='wbc'||campo==='vol'||campo==='pct'){const k=document.getElementById('stCalc');if(k)k.innerHTML=stCalcTxt(e);}
 }
 /* Repintado del editor sin animación de entrada y conservando el desplazamiento. */
 let _stQuiet=false;
@@ -6356,7 +6392,10 @@ function stViewEdit(e){
         <div class="mfld"><label class="mlbl">Nombre o número de muestra</label><input class="minp" value="${esc(e.name)}" placeholder="94029" onchange="stSet('name',this.value)"></div>
         <div class="mfld"><label class="mlbl">Población <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" value="${esc(e.population)}" placeholder="P4" onchange="stSet('population',this.value)"></div>
         <div class="mfld"><label class="mlbl">% aproximado</label><input class="minp" value="${esc(e.pct)}" placeholder="22.9" onchange="stSet('pct',this.value)"></div>
-      </div></div>
+        <div class="mfld"><label class="mlbl">WBC (células/<span class="no-up">µ</span>L) <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" inputmode="decimal" value="${esc(e.wbc)}" placeholder="7500" onchange="stSet('wbc',this.value)"></div>
+        <div class="mfld"><label class="mlbl">Volumen total (<span class="no-up">µ</span>L) <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" inputmode="decimal" value="${esc(e.vol)}" placeholder="200" onchange="stSet('vol',this.value)"></div>
+      </div>
+      <p class="sub" id="stCalc" style="margin:12px 2px 0">${stCalcTxt(e)}</p></div>
     </div>
 
     <div class="section"><div class="sec-hd"><div class="sec-ico">${ic('target',19)}</div><h2>Estrategia de gating <span class="cnt">${e.steps.length}/${ST_MAX_STEPS}</span></h2>${e.steps.length?`<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearSteps()" title="Quitar todas las capturas">${ic('trash',14)} Vaciar</button>`:''}</div>
@@ -6408,7 +6447,7 @@ function stFileName(e,ext){
 }
 /* Alto que se le concede al bloque de gating: crece con el número de capturas,
    porque es el contenido al que se le da prioridad. */
-function stAltoGating(n){return 560+Math.min(n,10)*26;}
+function stAltoGating(n){return 700+Math.min(n,10)*34;}
 const ST_RATIO=1;      // alto/ancho de cada captura: cuadrada, como un dot plot
 const ST_HUECO_FILA=34; // espacio entre filas, donde cabe la flecha de bajada
 /* Elige el reparto en filas que deja la captura lo más ancha posible. */
@@ -6502,7 +6541,7 @@ async function stDibujar(e,escala){
 
   /* Columna izquierda: tabla. Derecha: fenotipo y porcentaje. */
   const colIzq=Math.round(anchoUtil*0.54), colDer=anchoUtil-colIzq-24;
-  const filaAlt=30, tablaCab=34;
+  const filaAlt=27, tablaCab=32;
   const dosCol=e.panel.length>10;
   const filasPorCol=dosCol?Math.ceil(e.panel.length/2):Math.max(1,e.panel.length);
   const tablaH=40+tablaCab+filasPorCol*filaAlt+18;
@@ -6517,9 +6556,18 @@ async function stDibujar(e,escala){
   const lineasNotas=e.notes?stPartir(medidor,e.notes,anchoUtil-40):[];
   const notasH=lineasNotas.length?(28+lineasNotas.length*24+18):0;
 
-  const derH=fenoH+(pctH?pctH+18:0);
-  const bloqueH=Math.max(tablaH,derH);
-  const H=cabH+(gatingH?gatingH+22:12)+bloqueH+(notasH?notasH+18:0)+M*2-10;
+  /* Recuento celular: sólo las líneas que el usuario ha rellenado. */
+  const cc=stCalc(e);
+  const recLin=[];
+  if(cc.wbc!=null)recLin.push(['WBC','células/µL',stFmtN(cc.wbc),0]);
+  if(cc.vol!=null)recLin.push(['Volumen total','µL',stFmtN(cc.vol),0]);
+  if(cc.total!=null)recLin.push(['Leucocitos totales','',stFmtN(cc.total),1]);
+  if(cc.interes!=null)recLin.push(['Células de interés','',stFmtN(cc.interes),2]);
+  /* Franja a todo el ancho bajo las dos columnas: así sólo suma una fila de
+     alto y la figura de gating conserva su tamaño. */
+  const recH=recLin.length?(34+68+18):0;
+  const bloqueH=Math.max(tablaH,fenoH+(pctH?pctH+18:0));
+  const H=cabH+(gatingH?gatingH+22:12)+bloqueH+recH+(notasH?notasH+18:0)+M*2-10;
 
   /* ── Dibujo ── */
   /* A 600 ppp la hoja puede superar lo que el navegador dibuja: si pasa, se baja
@@ -6618,9 +6666,31 @@ async function stDibujar(e,escala){
     g.fillText(e.pct+(/%$/.test(e.pct)?'':' %'),xd+26,yp+18);
   }
 
+  /* Recuento celular */
+  if(recLin.length){
+    const yr=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH;
+    stTituloSeccion(g,'RECUENTO CELULAR',M,yr,anchoUtil);
+    const hueco=14, n=recLin.length, wc=Math.min(316,(anchoUtil-hueco*(n-1))/n), y0=yr+34;
+    recLin.forEach((l,i)=>{
+      const x0=M+i*(wc+hueco), fuerte=l[3]===2;
+      stRect(g,x0,y0,wc,68,14);
+      if(fuerte){
+        const gr=g.createLinearGradient(x0,y0,x0+wc,y0);gr.addColorStop(0,P.marca2);gr.addColorStop(1,P.marca1);
+        g.fillStyle=gr;g.fill();
+      }else{g.fillStyle=P.panel;g.fill();g.strokeStyle=P.filete;g.lineWidth=1;g.stroke();}
+      g.textAlign='left';
+      g.fillStyle=fuerte?'rgba(255,255,255,.92)':P.tinta2;
+      g.font='700 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+      g.fillText(l[0].toUpperCase()+(l[1]?' ('+l[1]+')':''),x0+20,y0+12);
+      g.fillStyle=fuerte?'#FFFFFF':(l[3]===1?P.marca3:P.tinta);
+      g.font='800 28px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+      g.fillText(l[2],x0+20,y0+31);
+    });
+  }
+
   /* Notas al pie */
   if(lineasNotas.length){
-    const yn=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH+18;
+    const yn=M+cabH-14+(gatingH?gatingH+22:12)+bloqueH+recH+18;
     g.fillStyle=P.tinta2;
     g.font='400 17px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     lineasNotas.forEach((l,i)=>g.fillText(l,M,yn+i*24));
