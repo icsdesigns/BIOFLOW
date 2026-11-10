@@ -2031,6 +2031,7 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 .rp-table{border-collapse:collapse;width:100%;font-size:12.5px}
 .rp-table th{text-align:left;font-size:10.5px;font-weight:650;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--bd2);white-space:nowrap}
 .rp-table td{padding:2px;border-bottom:1px solid var(--grid)}
+.st-adapt{padding:2px 10px;font-size:12.5px;font-weight:650;color:var(--ac2,var(--tx));white-space:nowrap;text-align:right}
 .rp-cell{width:100%;min-width:80px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);padding:6px 7px;font-size:12.5px;color:var(--tx)}
 .rp-cell:hover{background:var(--sf2)}
 .rp-cell:focus{outline:none;border-color:var(--ac);background:var(--sf);box-shadow:0 0 0 3px var(--foc)}
@@ -3685,7 +3686,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.20';
+const APP_VERSION='2.21';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -5978,6 +5979,8 @@ function stMigrate(){
     if(typeof e.pct!=='string')e.pct='';
     if(typeof e.wbc!=='string')e.wbc='';
     if(typeof e.vol!=='string')e.vol='';
+    if(typeof e.optM!=='string')e.optM='';
+    if(typeof e.loss!=='string')e.loss='';
     if(typeof e.notes!=='string')e.notes='';
     if(!Array.isArray(e.steps))e.steps=[];
     e.steps=e.steps.slice(0,ST_MAX_STEPS);
@@ -6023,6 +6026,41 @@ function stCalc(e){
   const interes=(total!=null&&pct!=null)?total*pct/100:null;
   return {wbc,vol,pct,total,interes};
 }
+/* ── Título adaptado ──
+   El título estándar está optimizado para optM millones de células. Las células
+   que quedan tras el procesamiento son leucocitos totales × (1 − pérdida %), y
+   el título adaptado es: estándar × células finales / células de optimización.
+   Sin leucocitos totales o sin optM no se calcula. La pérdida vacía cuenta 0. */
+function stFmtD(n,d){
+  if(n==null||!isFinite(n))return '';
+  const f=Math.pow(10,d),r=Math.round(n*f)/f;
+  const [ent,dec]=String(r).split('.');
+  return ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+(dec?','+dec:'');
+}
+function stAdapt(e){
+  const c=stCalc(e),opt=stNum(e.optM),perd=stNum(e.loss);
+  if(c.total==null||!opt||opt<=0)return null;
+  const p=Math.min(100,perd||0);
+  const finalM=c.total*(1-p/100)/1e6;
+  return {opt,perd:p,finalM,factor:finalM/opt};
+}
+function stTituloAdapt(e,f){
+  const a=stAdapt(e),t=stNum(f.titer);
+  return (a&&t!=null)?t*a.factor:null;
+}
+function stAdaptTxt(e){
+  const a=stAdapt(e);
+  if(!a)return 'Rellena «Optimizado para», WBC y volumen total para recalcular los títulos.';
+  return 'Células tras el procesamiento: <b>'+stFmtD(a.finalM,2)+'×10⁶</b> (pérdida '+stFmtD(a.perd,1)+' %). Los títulos se multiplican por <b>'+stFmtD(a.factor,3)+'</b>.';
+}
+function stAdaptRefresh(){
+  const e=stGet();if(!e)return;
+  document.querySelectorAll('[data-adapt]').forEach(td=>{
+    const f=e.panel[+td.dataset.adapt];const v=f?stTituloAdapt(e,f):null;
+    td.textContent=v==null?'—':stFmtD(v,2);
+  });
+  const k=document.getElementById('stAdaptInfo');if(k)k.innerHTML=stAdaptTxt(e);
+}
 function stCalcTxt(e){
   const c=stCalc(e);
   if(c.total==null)return 'Rellena WBC y volumen total para calcular los leucocitos totales.';
@@ -6038,7 +6076,7 @@ function stHome(){V.area='strategies';S.area='strategies';V.stpage='home';V.stid
 function stOpen(id){if(!stGet(id))return;V.area='strategies';S.area='strategies';V.stpage='edit';V.stid=id;S.lastStid=id;save();closeDrawer();renderAll();if(isMobile()&&!S.sideOff){S.sideOff=true;applySide();}}
 function stNew(){
   const e={id:uid(),name:uniqueName('Nueva estrategia',stList().map(x=>x.name),'Nueva estrategia'),population:'',
-    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',notes:'',createdAt:new Date().toISOString()};
+    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',optM:'',loss:'',notes:'',createdAt:new Date().toISOString()};
   stList().unshift(e);save();stOpen(e.id);toast('Estrategia creada',{icon:'circle-check'});
 }
 function stDuplicate(id){
@@ -6067,6 +6105,7 @@ function stSet(campo,valor){
     renderSidebar();
   }
   if(campo==='wbc'||campo==='vol'||campo==='pct'){const k=document.getElementById('stCalc');if(k)k.innerHTML=stCalcTxt(e);}
+  if(['wbc','vol','optM','loss'].includes(campo))stAdaptRefresh();
 }
 /* Repintado del editor sin animación de entrada y conservando el desplazamiento. */
 let _stQuiet=false;
@@ -6249,7 +6288,7 @@ function stStepSet(id,campo,valor){
 
 /* ── Mix de anticuerpos ── */
 function stPanelAdd(){const e=stGet();if(!e)return;e.panel.push({marker:'',fluor:'',titer:''});save();stRender();}
-function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();}
+function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();if(campo==='titer')stAdaptRefresh();}
 function stPanelDel(i){const e=stGet();if(!e)return;e.panel.splice(i,1);save();stRender();}
 function stPanelMove(i,dir){
   const e=stGet();if(!e)return;const j=i+dir;
@@ -6369,12 +6408,13 @@ function stViewEdit(e){
       <td><input class="rp-cell" value="${esc(f.marker)}" placeholder="CD45" onchange="stPanelSet(${i},'marker',this.value)"></td>
       <td><input class="rp-cell" value="${esc(f.fluor)}" placeholder="PerCP" onchange="stPanelSet(${i},'fluor',this.value)"></td>
       <td><input class="rp-cell" value="${esc(f.titer)}" placeholder="1.5" onchange="stPanelSet(${i},'titer',this.value)"></td>
+      <td class="st-adapt" data-adapt="${i}">${(()=>{const v=stTituloAdapt(e,f);return v==null?'—':stFmtD(v,2);})()}</td>
       <td class="rp-rowacts">
         <button class="sc-ibtn" title="Subir" ${i===0?'disabled':''} onclick="stPanelMove(${i},-1)">${ic('arrow-up',15)}</button>
         <button class="sc-ibtn" title="Bajar" ${i===e.panel.length-1?'disabled':''} onclick="stPanelMove(${i},1)">${ic('arrow-down',15)}</button>
         <button class="sc-ibtn" title="Eliminar fila" onclick="stPanelDel(${i})">${ic('trash',16)}</button>
       </td></tr>`).join('')
-    :`<tr><td colspan="4" style="color:var(--tx3);font-size:12.5px;padding:10px">Sin anticuerpos todavía.</td></tr>`;
+    :`<tr><td colspan="5" style="color:var(--tx3);font-size:12.5px;padding:10px">Sin anticuerpos todavía.</td></tr>`;
 
   return `<button class="back-btn" onclick="stHome()">${ic('arrow-left',15)} Estrategias</button>
     <div class="page-head">
@@ -6392,8 +6432,8 @@ function stViewEdit(e){
         <div class="mfld"><label class="mlbl">Nombre o número de muestra</label><input class="minp" value="${esc(e.name)}" placeholder="94029" onchange="stSet('name',this.value)"></div>
         <div class="mfld"><label class="mlbl">Población <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" value="${esc(e.population)}" placeholder="P4" onchange="stSet('population',this.value)"></div>
         <div class="mfld"><label class="mlbl">% aproximado</label><input class="minp" value="${esc(e.pct)}" placeholder="22.9" onchange="stSet('pct',this.value)"></div>
-        <div class="mfld"><label class="mlbl">WBC (células/<span class="no-up">µ</span>L) <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" inputmode="decimal" value="${esc(e.wbc)}" placeholder="7500" onchange="stSet('wbc',this.value)"></div>
-        <div class="mfld"><label class="mlbl">Volumen total (<span class="no-up">µ</span>L) <span style="color:var(--tx3);font-weight:400">(opcional)</span></label><input class="minp" inputmode="decimal" value="${esc(e.vol)}" placeholder="200" onchange="stSet('vol',this.value)"></div>
+        <div class="mfld"><label class="mlbl"><span>WBC (células/µL) <span style="color:var(--tx3);font-weight:400">(opcional)</span></span></label><input class="minp" inputmode="decimal" value="${esc(e.wbc)}" placeholder="7500" onchange="stSet('wbc',this.value)"></div>
+        <div class="mfld"><label class="mlbl"><span>Volumen total (µL) <span style="color:var(--tx3);font-weight:400">(opcional)</span></span></label><input class="minp" inputmode="decimal" value="${esc(e.vol)}" placeholder="200" onchange="stSet('vol',this.value)"></div>
       </div>
       <p class="sub" id="stCalc" style="margin:12px 2px 0">${stCalcTxt(e)}</p></div>
     </div>
@@ -6410,7 +6450,12 @@ function stViewEdit(e){
         <label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
         <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
         <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
-        <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+        <div class="rp-grid" style="margin-bottom:4px">
+          <div class="mfld"><label class="mlbl"><span>Título optimizado para (millones de células)</span></label><input class="minp" inputmode="decimal" value="${esc(e.optM)}" placeholder="15" onchange="stSet('optM',this.value)"></div>
+          <div class="mfld"><label class="mlbl"><span>Pérdida estimada en el procesamiento (%)</span></label><input class="minp" inputmode="decimal" value="${esc(e.loss)}" placeholder="30" onchange="stSet('loss',this.value)"></div>
+        </div>
+        <p class="sub" id="stAdaptInfo" style="margin:0 2px 14px">${stAdaptTxt(e)}</p>
+        <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título (<span class="no-up">µ</span>L)</th><th>Adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       </div>
     </div>
 
@@ -6544,7 +6589,12 @@ async function stDibujar(e,escala){
   const filaAlt=27, tablaCab=32;
   const dosCol=e.panel.length>10;
   const filasPorCol=dosCol?Math.ceil(e.panel.length/2):Math.max(1,e.panel.length);
-  const tablaH=40+tablaCab+filasPorCol*filaAlt+18;
+  /* Título adaptado: sólo sale si se puede calcular para algún anticuerpo. */
+  const adInfo=stAdapt(e);
+  const adList=e.panel.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,2);});
+  const adOn=!!adInfo&&adList.some(Boolean);
+  const notaAdH=adOn?26:0;
+  const tablaH=40+tablaCab+filasPorCol*filaAlt+18+notaAdH;
 
   /* El texto del fenotipo se mide de verdad para no cortarlo. */
   const medidor=document.createElement('canvas').getContext('2d');
@@ -6635,10 +6685,17 @@ async function stDibujar(e,escala){
   stTituloSeccion(g,'MIX DE ANTICUERPOS',M,y,colIzq);
   if(dosCol){
     const hueco=16, sub=(colIzq-hueco)/2, mitad=Math.ceil(e.panel.length/2);
-    stTabla(g,e.panel.slice(0,mitad),M,y+34,sub,tablaCab,filaAlt);
-    stTabla(g,e.panel.slice(mitad),M+sub+hueco,y+34,sub,tablaCab,filaAlt);
+    stTabla(g,e.panel.slice(0,mitad),M,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(0,mitad):null);
+    stTabla(g,e.panel.slice(mitad),M+sub+hueco,y+34,sub,tablaCab,filaAlt,adOn?adList.slice(mitad):null);
   }else{
-    stTabla(g,e.panel,M,y+34,colIzq,tablaCab,filaAlt);
+    stTabla(g,e.panel,M,y+34,colIzq,tablaCab,filaAlt,adOn?adList:null);
+  }
+  if(adOn){
+    const yn=y+34+tablaCab+filasPorCol*filaAlt+10;
+    g.fillStyle=P.tinta3;g.textAlign='left';
+    g.font='400 13px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
+    const tx='Estándar para '+stFmtD(adInfo.opt,2)+'×10⁶ células · adaptado a '+stFmtD(adInfo.finalM,2)+'×10⁶ células'+(adInfo.perd>0?' (con '+stFmtD(adInfo.perd,1)+' % de pérdida)':'');
+    g.fillText(stRecortar(g,tx,colIzq),M,yn);
   }
 
   /* Fenotipo y porcentaje */
@@ -6817,7 +6874,7 @@ function stFlechaAbajo(g,cx,cy,color){
   stFlechaFigura(g,color);
   g.restore();
 }
-function stTabla(g,panel,x,y,w,hCab,hFila){
+function stTabla(g,panel,x,y,w,hCab,hFila,ad){
   const P=ST_EXP;
   const filas=panel.length?panel:[{marker:'—',fluor:'',titer:''}];
   /* En columna estrecha se baja un punto el cuerpo para que quepan los nombres
@@ -6833,12 +6890,14 @@ function stTabla(g,panel,x,y,w,hCab,hFila){
   stRect(g,x,y,w,alto,14);g.clip();
   g.fillStyle=P.panel;g.fillRect(x,y,w,hCab);
   g.strokeStyle=P.filete;g.beginPath();g.moveTo(x,y+hCab);g.lineTo(x+w,y+hCab);g.stroke();
-  const c1=x+pad, c2=x+w*0.50, c3=x+w-pad;
+  const c1=x+pad, c2=x+w*(ad?(estrecha?0.27:0.32):0.50), c3=ad?x+w*(estrecha?0.66:0.68):x+w-pad, c4=x+w-pad;
   g.fillStyle=P.tinta2;
   g.font='800 '+fCab+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
   g.fillText('MARCADOR',c1,y+11);
-  g.fillText('FLUOROCROMO',c2,y+11);
-  g.textAlign='right';g.fillText(estrecha?'µL':'TÍTULO (µL)',c3,y+11);g.textAlign='left';
+  g.fillText(ad&&estrecha?'FLUOROCR.':'FLUOROCROMO',c2,y+11);
+  g.textAlign='right';g.fillText(ad?(estrecha?'TÍTULO µL':'TÍTULO (µL)'):(estrecha?'µL':'TÍTULO (µL)'),c3,y+11);
+  if(ad){g.fillStyle=P.marca3;g.fillText(estrecha?'ADAPTADO µL':'ADAPTADO (µL)',c4,y+11);}
+  g.textAlign='left';
   /* Filas, con bandas alternas para seguir la línea con la vista */
   filas.forEach((f,i)=>{
     const fy=y+hCab+i*hFila;
@@ -6848,11 +6907,12 @@ function stTabla(g,panel,x,y,w,hCab,hFila){
     g.fillText(stRecortar(g,f.marker||'',c2-c1-10),c1,fy+7);
     g.font='400 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     g.fillStyle=P.tinta2;
-    g.fillText(stRecortar(g,f.fluor||'',c3-c2-44),c2,fy+7);
+    g.fillText(stRecortar(g,f.fluor||'',c3-c2-(ad?(estrecha?22:30):44)),c2,fy+7);
     g.textAlign='right';
     g.fillStyle=P.tinta;
     g.font='650 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';
     g.fillText(f.titer||'',c3,fy+7);
+    if(ad&&ad[i]){g.fillStyle=P.marca3;g.font='800 '+fBase+'px "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif';g.fillText(ad[i],c4,fy+7);}
     g.textAlign='left';
   });
   g.restore();
