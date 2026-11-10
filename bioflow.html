@@ -3690,7 +3690,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='2.29';
+const APP_VERSION='3.0';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6615,7 +6615,7 @@ async function stDibujarA4(e,escala,layout){
    información adicional); cambia cómo se reparten. Las secciones sin datos no
    salen y su hueco lo aprovechan las demás. */
 const ST_LAYOUTS=[
-  {id:'A',n:'Dos filas',d:'Fenotipo junto a la información de la muestra; debajo, el mix junto a la información adicional.'},
+  {id:'A',n:'Dos filas',d:'Fenotipo e información de la muestra en filas a todo el ancho; debajo, el mix junto a la información adicional.'},
   {id:'B',n:'Tres columnas',d:'Bajo el gating, tres columnas: fenotipo y muestra, mix e información adicional.'},
   {id:'C',n:'Lateral',d:'El gating a la izquierda con una columna lateral de datos; el mix a todo el ancho debajo.'},
   {id:'D',n:'Informe',d:'Todo en bandas a lo ancho, como un informe: fenotipo, cifras de la muestra en tarjetas y tablas.'}
@@ -6792,7 +6792,8 @@ async function stDibujar(e,escala,extra,layout){
   /* ── Reparto según el diseño: filas de columnas {f: fracción, b: bloques} ── */
   const L={
     A:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
-       [{f:1,b:w=>[bFeno(w)]},{f:1,b:w=>[bMuestraTarjetas(w)]}],
+       [{f:1,b:w=>[bFeno(w)]}],
+       [{f:1,b:w=>[bMuestraTarjetas(w)]}],
        [{f:.58,b:w=>[bMix(w,true)]},{f:.42,b:w=>[bAdic(w)]}],
        [{f:1,b:w=>[bNotas(w)]}]],
     B:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
