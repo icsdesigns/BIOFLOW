@@ -2245,6 +2245,12 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 /* Mix: textos a la izquierda y cifras centradas; la cabecera arranca donde el
    texto del campo (2 px de celda + 1 px de borde + 7 px de relleno). */
 .st-mix th{padding-left:10px;padding-right:10px}
+.st-grip{color:var(--tx3);cursor:grab;text-align:center;padding:0 2px;line-height:0}
+.st-grip:hover{color:var(--tx)}
+.st-mix tr.st-dragging{opacity:.45}
+.st-mix tr.st-drop-up td{box-shadow:inset 0 2px 0 var(--ac)}
+.st-mix tr.st-drop-dn td{box-shadow:inset 0 -2px 0 var(--ac)}
+.btn.on{box-shadow:inset 0 0 0 1.5px var(--ac);color:var(--tx)}
 .st-mix th.num,.st-mix td.num,.st-mix td.num .rp-cell{text-align:center}
 .st-mix td.st-adapt{padding:2px 10px}
 .st-mix td.rp-rowacts{text-align:right}
@@ -3696,7 +3702,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='3.4';
+const APP_VERSION='3.5';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -5992,6 +5998,7 @@ function stMigrate(){
     if(typeof e.optM!=='string')e.optM='';
     if(typeof e.volT!=='string')e.volT='400';
     if(typeof e.volM!=='string')e.volM='100';
+    if(!['asc','desc','manual'].includes(e.mixOrder))e.mixOrder='asc';
     if(typeof e.loss!=='string')e.loss='';
     if(typeof e.notes!=='string')e.notes='';
     if(!Array.isArray(e.steps))e.steps=[];
@@ -6107,7 +6114,7 @@ function stHome(){V.area='strategies';S.area='strategies';V.stpage='home';V.stid
 function stOpen(id){if(!stGet(id))return;V.area='strategies';S.area='strategies';V.stpage='edit';V.stid=id;S.lastStid=id;save();closeDrawer();renderAll();if(isMobile()&&!S.sideOff){S.sideOff=true;applySide();}}
 function stNew(){
   const e={id:uid(),name:uniqueName('Nueva estrategia',stList().map(x=>x.name),'Nueva estrategia'),population:'',
-    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',optM:'',loss:'',volT:'400',volM:'100',notes:'',createdAt:new Date().toISOString()};
+    steps:[],panel:[],phenotype:'',pct:'',wbc:'',vol:'',optM:'',loss:'',volT:'400',volM:'100',mixOrder:'asc',notes:'',createdAt:new Date().toISOString()};
   stList().unshift(e);save();stOpen(e.id);toast('Estrategia creada',{icon:'circle-check'});
 }
 function stDuplicate(id){
@@ -6335,7 +6342,7 @@ function stStepSet(id,campo,valor){
    no se puede adaptar, se usa el título estándar. Empates: título estándar y
    después el orden original. Las filas sin fluorocromo o sin título numérico
    quedan al final, en su orden. */
-function stPanelOrdenado(panel,e){
+function stPanelOrdenado(panel,e,desc){
   e=e||stGet();
   const idx=panel.map((f,k)=>{
     const t=stNum(f.titer), a=e?stTituloAdapt(e,f):null;
@@ -6345,21 +6352,64 @@ function stPanelOrdenado(panel,e){
     if(a.c!==b.c)return a.c?-1:1;
     if(!a.c)return a.k-b.k;
     if((a.v==null)!==(b.v==null))return a.v==null?1:-1;
-    if(a.v!=null&&a.v!==b.v)return a.v-b.v;
-    if(a.t!=null&&b.t!=null&&a.t!==b.t)return a.t-b.t;
+    if(a.v!=null&&a.v!==b.v)return desc?b.v-a.v:a.v-b.v;
+    if(a.t!=null&&b.t!=null&&a.t!==b.t)return desc?b.t-a.t:a.t-b.t;
     return a.k-b.k;
   };
   return idx.sort(ord).map(x=>x.f);
 }
-function stPanelSortTitulo(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel,e);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por título adaptado',{icon:'sheet'});}
-function stPanelAdd(){const e=stGet();if(!e)return;e.panel.push({marker:'',fluor:'',titer:''});save();stRender();}
-function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();if(campo==='titer')stAdaptRefresh();}
-function stPanelDel(i){const e=stGet();if(!e)return;e.panel.splice(i,1);save();stRender();}
+/* Orden del mix en la hoja: «asc» y «desc» se recalculan al exportar (así
+   siguen al día si cambia un título); «manual» respeta el orden de la tabla. */
+function stMixOrden(e){
+  if(e.mixOrder==='manual')return e.panel.slice();
+  return stPanelOrdenado(e.panel,e,e.mixOrder==='desc');
+}
+function stPanelSortTitulo(desc){
+  const e=stGet();if(!e)return;
+  e.mixOrder=desc?'desc':'asc';
+  e.panel=stPanelOrdenado(e.panel,e,!!desc);
+  e.updatedAt=new Date().toISOString();save();stRender();
+  toast(desc?'Ordenado de mayor a menor':'Ordenado de menor a mayor',{icon:'sheet'});
+}
+/* Reordenar por arrastre: se agarra el asa de la fila y se suelta sobre otra.
+   El draggable se activa sólo mientras se pulsa el asa, para no estorbar a la
+   selección de texto de los campos. */
+let _stDragI=-1;
+function stDragOn(tr,on){tr.draggable=!!on;}
+function stDragStart(ev,i){
+  _stDragI=i;
+  try{ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',String(i));}catch(_){}
+  ev.currentTarget.classList.add('st-dragging');
+}
+function stDragOver(ev,i){
+  if(_stDragI<0)return;
+  ev.preventDefault();
+  const tr=ev.currentTarget,r=tr.getBoundingClientRect(),arriba=ev.clientY<r.top+r.height/2;
+  document.querySelectorAll('.st-drop-up,.st-drop-dn').forEach(x=>x.classList.remove('st-drop-up','st-drop-dn'));
+  tr.classList.add(arriba?'st-drop-up':'st-drop-dn');
+}
+function stDragEnd(ev){
+  _stDragI=-1;
+  document.querySelectorAll('.st-dragging,.st-drop-up,.st-drop-dn').forEach(x=>x.classList.remove('st-dragging','st-drop-up','st-drop-dn'));
+  if(ev&&ev.currentTarget)ev.currentTarget.draggable=false;
+}
+function stDrop(ev,i){
+  ev.preventDefault();
+  const e=stGet(),de=_stDragI;
+  const tr=ev.currentTarget,r=tr.getBoundingClientRect(),abajo=ev.clientY>=r.top+r.height/2;
+  stDragEnd(null);
+  if(!e||de<0)return;
+  let dest=i+(abajo?1:0);
+  if(de<dest)dest--;
+  if(dest===de)return;
+  const [f]=e.panel.splice(de,1);e.panel.splice(dest,0,f);
+  e.mixOrder='manual';e.updatedAt=new Date().toISOString();save();stRender();
+}
 function stPanelMove(i,dir){
   const e=stGet();if(!e)return;const j=i+dir;
   if(j<0||j>=e.panel.length)return;
   const [f]=e.panel.splice(i,1);e.panel.splice(j,0,f);
-  save();stRender();
+  e.mixOrder='manual';save();stRender();
 }
 /* Vaciado de secciones completas, con deshacer. */
 function stClearSteps(){
@@ -6393,7 +6443,7 @@ function stPanelPaste(){
     filas.push({marker:nmu(m),fluor:nmu((c[1]||'').trim()),titer:nmu((c[2]||'').trim())});
   });
   if(!filas.length){toast('No se reconocieron filas. Pega desde Excel (columnas separadas por tabulador).',{icon:'alert'});return;}
-  e.panel=stPanelOrdenado(filas,e);save();stRender();
+  e.mixOrder='asc';e.panel=stPanelOrdenado(filas,e);save();stRender();
   toast(filas.length+' fila(s) cargadas',{icon:'sheet'});
 }
 
@@ -6469,7 +6519,8 @@ function stViewEdit(e){
     : `<div class="st-drop st-drop-full">${ic('info',15)} Has llegado al máximo de ${ST_MAX_STEPS} capturas. Elimina alguna para pegar otra.</div>`;
 
   /* ── Mix de anticuerpos ── */
-  const filas=e.panel.length?e.panel.map((f,i)=>`<tr>
+  const filas=e.panel.length?e.panel.map((f,i)=>`<tr ondragstart="stDragStart(event,${i})" ondragover="stDragOver(event,${i})" ondrop="stDrop(event,${i})" ondragend="stDragEnd(event)">
+      <td class="st-grip" title="Arrastra para reordenar" onmousedown="stDragOn(this.parentNode,true)" onmouseup="stDragOn(this.parentNode,false)">${ic('grip',16)}</td>
       <td><input class="rp-cell" value="${esc(f.marker)}" placeholder="CD45" onchange="stPanelSet(${i},'marker',this.value)"></td>
       <td><input class="rp-cell" value="${esc(f.fluor)}" onchange="stPanelSet(${i},'fluor',this.value)"></td>
       <td class="num"><input class="rp-cell" inputmode="decimal" value="${esc(f.titer)}" onchange="stPanelSet(${i},'titer',this.value)"></td>
@@ -6479,7 +6530,7 @@ function stViewEdit(e){
         <button class="sc-ibtn" title="Bajar" ${i===e.panel.length-1?'disabled':''} onclick="stPanelMove(${i},1)">${ic('arrow-down',15)}</button>
         <button class="sc-ibtn" title="Eliminar fila" onclick="stPanelDel(${i})">${ic('trash',16)}</button>
       </td></tr>`).join('')
-    :`<tr><td colspan="5" style="color:var(--tx3);font-size:12.5px;padding:10px">Sin anticuerpos todavía.</td></tr>`;
+    :`<tr><td colspan="6" style="color:var(--tx3);font-size:12.5px;padding:10px">Sin anticuerpos todavía.</td></tr>`;
 
   /* ── Secciones (las mismas seis de la hoja exportada) ── */
   const opc='<span style="color:var(--tx3);font-weight:400">(opcional)</span>';
@@ -6500,8 +6551,8 @@ function stViewEdit(e){
     </div><p class="sub" id="stCalc" style="margin:2px 2px 0">${stCalcTxt(e)}</p>`);
   const S5=sec(5,'sheet','Mix de anticuerpos',`<label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
       <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
-      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena las filas con fluorocromo por título adaptado, de menor a mayor">${ic('arrow-down',14)} Ordenar por título adaptado</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
-      <div style="overflow-x:auto"><table class="rp-table st-mix"><colgroup><col style="width:30%"><col style="width:26%"><col style="width:16%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Marcador</th><th>Fluorocromo</th><th class="num">Título estándar (<span class="no-up">µ</span>L)</th><th class="num">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
+      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm${e.mixOrder==='asc'?' on':''}" onclick="stPanelSortTitulo(false)" title="Ordena las filas con fluorocromo por título adaptado, de menor a mayor">${ic('arrow-up',14)} Menor a mayor</button><button class="btn btn-g sm${e.mixOrder==='desc'?' on':''}" onclick="stPanelSortTitulo(true)" title="Ordena las filas con fluorocromo por título adaptado, de mayor a menor">${ic('arrow-down',14)} Mayor a menor</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
+      <div style="overflow-x:auto"><table class="rp-table st-mix"><colgroup><col style="width:4%"><col style="width:28%"><col style="width:25%"><col style="width:16%"><col style="width:16%"><col style="width:11%"></colgroup><thead><tr><th></th><th>Marcador</th><th>Fluorocromo</th><th class="num">Título estándar (<span class="no-up">µ</span>L)</th><th class="num">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
     `<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearPanel()" title="Vaciar la tabla y el texto pegado">${ic('trash',14)} Vaciar</button>`);
   const S6=sec(6,'layers','Información adicional',`<div class="rp-grid">
       ${fld('Título optimizado para (millones de células)','optM','15',' inputmode="decimal"')}
@@ -6671,7 +6722,7 @@ async function stDibujar(e,escala,extra,layout){
   if(e.pct)muestra.push(['% aprox. población de interés','',pctTxt,3]);
   if(cc.interes!=null)muestra.push(['Células de interés totales','',stFmtN(cc.interes),2]);
 
-  const pan=stPanelOrdenado(e.panel,e);
+  const pan=stMixOrden(e);
   const adInfo=stAdapt(e);
   const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
