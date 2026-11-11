@@ -2242,6 +2242,12 @@ body.col-resizing .pop-resize::after{background:var(--ac)}
 .scroll>.wrap.quiet{animation:none}
 .st-num{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:7px;background:var(--ac,#12A793);color:#fff;font-size:12px;font-weight:800;margin-right:9px;vertical-align:2px}
 .st-ed .rp-rowacts .sc-ibtn{display:inline-flex}
+/* Mix: textos a la izquierda y cifras centradas; la cabecera arranca donde el
+   texto del campo (2 px de celda + 1 px de borde + 7 px de relleno). */
+.st-mix th{padding-left:10px;padding-right:10px}
+.st-mix th.num,.st-mix td.num,.st-mix td.num .rp-cell{text-align:center}
+.st-mix td.st-adapt{padding:2px 10px}
+.st-mix td.rp-rowacts{text-align:right}
 .st-ed .st-g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:640px){.st-ed .st-g3{grid-template-columns:1fr}}
 .no-up{text-transform:none}
@@ -3690,7 +3696,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='3.1';
+const APP_VERSION='3.2';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6447,8 +6453,8 @@ function stViewEdit(e){
   /* ── Mix de anticuerpos ── */
   const filas=e.panel.length?e.panel.map((f,i)=>`<tr>
       <td><input class="rp-cell" value="${esc(f.marker)}" placeholder="CD45" onchange="stPanelSet(${i},'marker',this.value)"></td>
-      <td><input class="rp-cell" value="${esc(f.fluor)}" placeholder="PerCP" onchange="stPanelSet(${i},'fluor',this.value)"></td>
-      <td><input class="rp-cell" value="${esc(f.titer)}" placeholder="1.5" onchange="stPanelSet(${i},'titer',this.value)"></td>
+      <td><input class="rp-cell" value="${esc(f.fluor)}" onchange="stPanelSet(${i},'fluor',this.value)"></td>
+      <td class="num"><input class="rp-cell" inputmode="decimal" value="${esc(f.titer)}" onchange="stPanelSet(${i},'titer',this.value)"></td>
       <td class="st-adapt" data-adapt="${i}">${(()=>{const v=stTituloAdapt(e,f);return v==null?'—':stFmtD(v,1);})()}</td>
       <td class="rp-rowacts">
         <button class="sc-ibtn" title="Subir" ${i===0?'disabled':''} onclick="stPanelMove(${i},-1)">${ic('arrow-up',15)}</button>
@@ -6477,7 +6483,7 @@ function stViewEdit(e){
   const S5=sec(5,'sheet','Mix de anticuerpos',`<label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
       <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
       <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena los anticuerpos con fluorocromo por título, de menor a mayor">${ic('arrow-down',14)} Ordenar por título</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
-      <div style="overflow-x:auto"><table class="rp-table"><thead><tr><th>Marcador</th><th>Fluorocromo</th><th>Título estándar (<span class="no-up">µ</span>L)</th><th style="text-align:center">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
+      <div style="overflow-x:auto"><table class="rp-table st-mix"><colgroup><col style="width:30%"><col style="width:26%"><col style="width:16%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Marcador</th><th>Fluorocromo</th><th class="num">Título estándar (<span class="no-up">µ</span>L)</th><th class="num">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
     `<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearPanel()" title="Vaciar la tabla y el texto pegado">${ic('trash',14)} Vaciar</button>`);
   const S6=sec(6,'layers','Información adicional',`<div class="rp-grid">
       ${fld('Título optimizado para (millones de células)','optM','15',' inputmode="decimal"')}
