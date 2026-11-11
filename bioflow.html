@@ -3696,7 +3696,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='3.2';
+const APP_VERSION='3.3';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6318,22 +6318,28 @@ function stStepSet(id,campo,valor){
 }
 
 /* ── Mix de anticuerpos ── */
-/* Orden de los anticuerpos con fluorocromo: por título (µL) de menor a mayor.
-   El título adaptado es el estándar por un mismo factor, así que el orden es el
-   mismo en las dos columnas. Los títulos que no son un número y los marcadores
-   sin fluorocromo quedan al final, en su orden. */
-function stPanelOrdenado(panel){
-  const idx=panel.map((f,k)=>({f,k,t:stNum(f.titer),c:!!(f.fluor||'').trim()}));
+/* Orden del mix: sólo entran las filas con fluorocromo, de menor a mayor
+   «Título adaptado (µL)» tal y como se muestra (redondeado a 1 decimal). Si aún
+   no se puede adaptar, se usa el título estándar. Empates: título estándar y
+   después el orden original. Las filas sin fluorocromo o sin título numérico
+   quedan al final, en su orden. */
+function stPanelOrdenado(panel,e){
+  e=e||stGet();
+  const idx=panel.map((f,k)=>{
+    const t=stNum(f.titer), a=e?stTituloAdapt(e,f):null;
+    return {f,k,t,v:a!=null?Math.round(a*10)/10:t,c:!!(f.fluor||'').trim()};
+  });
   const ord=(a,b)=>{
     if(a.c!==b.c)return a.c?-1:1;
     if(!a.c)return a.k-b.k;
-    if((a.t==null)!==(b.t==null))return a.t==null?1:-1;
-    if(a.t!==b.t&&a.t!=null)return a.t-b.t;
+    if((a.v==null)!==(b.v==null))return a.v==null?1:-1;
+    if(a.v!=null&&a.v!==b.v)return a.v-b.v;
+    if(a.t!=null&&b.t!=null&&a.t!==b.t)return a.t-b.t;
     return a.k-b.k;
   };
   return idx.sort(ord).map(x=>x.f);
 }
-function stPanelSortTitulo(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por título',{icon:'sheet'});}
+function stPanelSortTitulo(){const e=stGet();if(!e)return;e.panel=stPanelOrdenado(e.panel,e);e.updatedAt=new Date().toISOString();save();stRender();toast('Ordenado por título adaptado',{icon:'sheet'});}
 function stPanelAdd(){const e=stGet();if(!e)return;e.panel.push({marker:'',fluor:'',titer:''});save();stRender();}
 function stPanelSet(i,campo,v){const e=stGet();if(!e||!e.panel[i])return;e.panel[i][campo]=nmu(v);e.updatedAt=new Date().toISOString();save();if(campo==='titer')stAdaptRefresh();}
 function stPanelDel(i){const e=stGet();if(!e)return;e.panel.splice(i,1);save();stRender();}
@@ -6375,7 +6381,7 @@ function stPanelPaste(){
     filas.push({marker:nmu(m),fluor:nmu((c[1]||'').trim()),titer:nmu((c[2]||'').trim())});
   });
   if(!filas.length){toast('No se reconocieron filas. Pega desde Excel (columnas separadas por tabulador).',{icon:'alert'});return;}
-  e.panel=filas;save();stRender();
+  e.panel=stPanelOrdenado(filas,e);save();stRender();
   toast(filas.length+' fila(s) cargadas',{icon:'sheet'});
 }
 
@@ -6482,7 +6488,7 @@ function stViewEdit(e){
     </div><p class="sub" id="stCalc" style="margin:2px 2px 0">${stCalcTxt(e)}</p>`);
   const S5=sec(5,'sheet','Mix de anticuerpos',`<label class="mlbl">${ic('paste',13)} Pegar desde Excel (columnas: Marcador, Fluorocromo, Título µL)</label>
       <textarea id="stPanelPaste" class="minp" rows="2" placeholder="Pega aquí la tabla copiada de Excel y pulsa «Cargar pegado»…"></textarea>
-      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena los anticuerpos con fluorocromo por título, de menor a mayor">${ic('arrow-down',14)} Ordenar por título</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
+      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap"><button class="btn btn-p sm" onclick="stPanelPaste()">${ic('paste',14)} Cargar pegado</button><button class="btn btn-g sm" onclick="stPanelSortTitulo()" title="Ordena las filas con fluorocromo por título adaptado, de menor a mayor">${ic('arrow-down',14)} Ordenar por título adaptado</button><button class="btn btn-g sm" onclick="stPanelAdd()">${ic('plus',14)} Añadir fila</button></div>
       <div style="overflow-x:auto"><table class="rp-table st-mix"><colgroup><col style="width:30%"><col style="width:26%"><col style="width:16%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Marcador</th><th>Fluorocromo</th><th class="num">Título estándar (<span class="no-up">µ</span>L)</th><th class="num">Título adaptado (<span class="no-up">µ</span>L)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`,
     `<div class="sp" style="flex:1"></div><button class="btn btn-g sm" onclick="stClearPanel()" title="Vaciar la tabla y el texto pegado">${ic('trash',14)} Vaciar</button>`);
   const S6=sec(6,'layers','Información adicional',`<div class="rp-grid">
@@ -6653,7 +6659,7 @@ async function stDibujar(e,escala,extra,layout){
   if(e.pct)muestra.push(['% aprox. población de interés','',pctTxt,3]);
   if(cc.interes!=null)muestra.push(['Células de interés totales','',stFmtN(cc.interes),2]);
 
-  const pan=stPanelOrdenado(e.panel);
+  const pan=stPanelOrdenado(e.panel,e);
   const adInfo=stAdapt(e);
   const adList=pan.map(f=>{const v=stTituloAdapt(e,f);return v==null?'':stFmtD(v,1);});
   const adOn=!!adInfo&&adList.some(Boolean);
