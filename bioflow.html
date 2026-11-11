@@ -3696,7 +3696,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='3.3';
+const APP_VERSION='3.4';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6309,6 +6309,18 @@ function stStepDel(id){
   e.steps=e.steps.filter(p=>p.id!==id);
   save();stRender();
 }
+/* Tab / Shift+Tab recorren sólo las etiquetas de eje, en el orden de los gates:
+   gate 1 Y → gate 1 X → gate 2 Y… Al llegar a un extremo, Tab sigue su curso
+   normal y sale de la sección. */
+function stAxTab(ev,el){
+  if(ev.key!=='Tab'||ev.ctrlKey||ev.altKey||ev.metaKey)return;
+  const todos=[...document.querySelectorAll('.st-ax')];
+  const sig=todos[todos.indexOf(el)+(ev.shiftKey?-1:1)];
+  if(!sig)return;
+  ev.preventDefault();
+  el.dispatchEvent(new Event('change'));   // guarda antes de saltar (el cambio nativo repetido no hace daño)
+  sig.focus();sig.select();
+}
 function stStepSet(id,campo,valor){
   const e=stGet();if(!e)return;
   const p=e.steps.find(x=>x.id===id);if(!p)return;
@@ -6431,12 +6443,12 @@ function stViewEdit(e){
     </label>
     <div class="st-axis">
       <span class="st-axis-t">Y</span>
-      <input class="minp" value="${esc(p.y)}" placeholder="Eje vertical" onchange="stStepSet('${p.id}','y',this.value)">
+      <input class="minp st-ax" value="${esc(p.y)}" placeholder="Eje vertical" onkeydown="stAxTab(event,this)" onchange="stStepSet('${p.id}','y',this.value)">
       <label class="color-wrap" title="Color de la etiqueta"><input type="color" value="${esc(p.yc)}" onchange="stStepSet('${p.id}','yc',this.value)"><span class="sw" style="width:22px;height:22px;border-radius:6px;background:${esc(p.yc)}"></span></label>
     </div>
     <div class="st-axis">
       <span class="st-axis-t">X</span>
-      <input class="minp" value="${esc(p.x)}" placeholder="Eje horizontal" onchange="stStepSet('${p.id}','x',this.value)">
+      <input class="minp st-ax" value="${esc(p.x)}" placeholder="Eje horizontal" onkeydown="stAxTab(event,this)" onchange="stStepSet('${p.id}','x',this.value)">
       <label class="color-wrap" title="Color de la etiqueta"><input type="color" value="${esc(p.xc)}" onchange="stStepSet('${p.id}','xc',this.value)"><span class="sw" style="width:22px;height:22px;border-radius:6px;background:${esc(p.xc)}"></span></label>
     </div>
   </div>`).join('');
