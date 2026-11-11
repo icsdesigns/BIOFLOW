@@ -3690,7 +3690,7 @@ function ic(n,s,cls){s=s||20;cls=cls?' '+cls:'';return `<svg class="ic${cls}" wi
 /* ════════ STORAGE ════════ */
 /* Versión de la app: el único sitio donde vive. Sube 0.1 con cada commit, de
    vX.0 a vX.20; tras vX.20 viene v(X+1).0. */
-const APP_VERSION='3.0';
+const APP_VERSION='3.1';
 const SK='bioflow_merged1';
 const COLS=['#12A793','#2E86D4','#7C5CFC','#E0962B','#D0497E','#5E9920','#E5484D','#0EA5C9','#6B7682','#C0560E'];
 let S={projects:[],ph:{samples:[],options:[],presets:[]},reports:[],reportPresets:{header:[],info:[],celularidad:[],estudios:[],comentario:[]},notes:[],noteCats:[],agenda:{events:[],cals:[]},agClip:null,strategies:[],area:'dashboard',theme:'light',sideOff:false,lastPid:null,lastFsid:null,lastRid:null};
@@ -6487,7 +6487,7 @@ function stViewEdit(e){
     </div>
     <p class="sub" id="stAdaptInfo" style="margin:0 2px 10px">${stAdaptTxt(e)}</p>
     <div id="stAdaptVol">${stVolHtml(e)}</div>`);
-  const SN=`<div class="section st-sec"><div class="sec-hd"><div class="sec-ico">${ic('message',19)}</div><h2>Notas</h2></div><div class="rp-card"><div class="mfld" style="margin-bottom:0"><label class="mlbl">Salen al pie del documento ${opc}</label><textarea class="minp auto" rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('notes',this.value)">${esc(e.notes)}</textarea></div></div></div>`;
+  const SN=`<div class="section st-sec"><div class="sec-hd"><div class="sec-ico">${ic('message',19)}</div><h2>Notas</h2></div><div class="rp-card"><div class="mfld" style="margin-bottom:0"><label class="mlbl">Salen en la hoja justo debajo del gating ${opc}</label><textarea class="minp auto" rows="2" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onchange="stSet('notes',this.value)">${esc(e.notes)}</textarea></div></div></div>`;
   const SX=`<div class="section">
       <div class="rp-card">
         <div class="cfg-row cfg-block"><div class="cfg-txt"><b>${ic('export',15)} Exportar</b><span>El PDF incrusta exactamente la misma hoja que el PNG, así que el contenido es idéntico. La estrategia de gating ocupa el lugar principal y no depende del tema de la app.</span></div></div>
@@ -6505,7 +6505,7 @@ function stViewEdit(e){
       </div>
     </div>`;
 
-  const cuerpo=`${S1}${S2}${S3}${S4}${S5}${S6}${SN}${SX}`;
+  const cuerpo=`${S1}${S2}${SN}${S3}${S4}${S5}${S6}${SX}`;
 
   return `<button class="back-btn" onclick="stHome()">${ic('arrow-left',15)} Estrategias</button>
     <div class="page-head">
@@ -6791,11 +6791,10 @@ async function stDibujar(e,escala,extra,layout){
 
   /* ── Reparto según el diseño: filas de columnas {f: fracción, b: bloques} ── */
   const L={
-    A:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
+    A:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],[{f:1,b:w=>[bNotas(w)]}],
        [{f:1,b:w=>[bFeno(w)]}],
        [{f:1,b:w=>[bMuestraTarjetas(w)]}],
-       [{f:.58,b:w=>[bMix(w,true)]},{f:.42,b:w=>[bAdic(w)]}],
-       [{f:1,b:w=>[bNotas(w)]}]],
+       [{f:.58,b:w=>[bMix(w,true)]},{f:.42,b:w=>[bAdic(w)]}]],
     B:[[{f:1,b:w=>[bCab(w)]}],[{f:1,b:w=>[bGating(w)]}],
        [{f:.29,b:w=>[bFeno(w),bMuestraKV(w)]},{f:.40,b:w=>[bMix(w,false)]},{f:.31,b:w=>[bAdic(w)]}],
        [{f:1,b:w=>[bNotas(w)]}]],
